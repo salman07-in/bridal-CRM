@@ -199,3 +199,62 @@ def test_tomorrows_makeup_service_query(app):
 
         cust_dis = next(item["customer"] for item in tomorrows if item["customer"].customer_code == "SAF-DIS-02")
         assert cust_dis.pre_makeup_reminder_enabled is False
+
+
+def test_engagement_and_party_package_submission(auth_client, app):
+    """Test creating bookings with Engagement and Party Makeup packages and brand rates."""
+    # 1. Create Engagement booking with NARS
+    res_eng = auth_client.post(
+        "/customers/new",
+        data={
+            "full_name": "Mehwish Roka",
+            "mobile_number": "9812345678",
+            "slip_number": "ENG-77",
+            "booking_type": "Engagement Makeup",
+            "service_package": "Engagement HD - Nars",
+            "amount": "8000",
+            "advance_amount": "3000",
+            "makeup_date": "2026-12-05",
+            "whatsapp_consent": "y",
+        },
+        follow_redirects=True,
+    )
+    assert res_eng.status_code == 200
+
+    # 2. Create Party booking with Bobbi Brown
+    res_party = auth_client.post(
+        "/customers/new",
+        data={
+            "full_name": "Sana Guest",
+            "mobile_number": "9823456789",
+            "slip_number": "PTY-88",
+            "booking_type": "Party Makeup",
+            "service_package": "Party Airbrush - Bobbi Brown",
+            "amount": "6000",
+            "advance_amount": "2000",
+            "makeup_date": "2026-12-06",
+            "whatsapp_consent": "y",
+        },
+        follow_redirects=True,
+    )
+    assert res_party.status_code == 200
+
+    with app.app_context():
+        c_eng = Customer.query.filter_by(mobile_number="9812345678").first()
+        assert c_eng is not None
+        assert c_eng.booking_type == "Engagement Makeup"
+        assert c_eng.service_package == "Engagement HD - Nars"
+        assert c_eng.amount == 8000.0
+        assert c_eng.advance_amount == 3000.0
+        assert c_eng.balance_due == 5000.0
+        assert c_eng.payment_status == "Partial"
+
+        c_pty = Customer.query.filter_by(mobile_number="9823456789").first()
+        assert c_pty is not None
+        assert c_pty.booking_type == "Party Makeup"
+        assert c_pty.service_package == "Party Airbrush - Bobbi Brown"
+        assert c_pty.amount == 6000.0
+        assert c_pty.advance_amount == 2000.0
+        assert c_pty.balance_due == 4000.0
+        assert c_pty.payment_status == "Partial"
+
