@@ -51,19 +51,32 @@ def test_anniversary_reminders():
             wedding_date=(today + timedelta(days=5)).replace(year=today.year - 2),
             whatsapp_consent=True,
         )
+        # Bride 4: Anniversary TOMORROW (1-Day Prior / Eve)
+        tomorrow_date = today + timedelta(days=1)
+        b4 = Customer(
+            customer_code="SAF-ANNIV-04",
+            full_name="Zeenat Begum",
+            mobile_number="9876588804",
+            wedding_date=tomorrow_date.replace(year=tomorrow_date.year - 2),
+            whatsapp_consent=True,
+            service_package="Bridal Airbrush - M.A.C",
+        )
 
-        db.session.add_all([b1, b2, b3])
+        db.session.add_all([b1, b2, b3, b4])
         db.session.commit()
 
-        # 1. Evaluate today's anniversaries
+        # 1. Evaluate today's and tomorrow's anniversaries
         todays = AnniversaryService.get_todays_anniversaries(today)
-        print(f"[+] Found {len(todays)} bride(s) celebrating today.")
+        tomorrows = AnniversaryService.get_tomorrows_anniversaries(today)
+        print(f"[+] Found {len(todays)} bride(s) celebrating today, {len(tomorrows)} celebrating tomorrow (Eve).")
         assert len(todays) >= 2
+        assert len(tomorrows) >= 1
 
         # 2. Process daily reminders
         result1 = ReminderService.process_daily_reminders()
         print(f"[+] Processed daily reminders: {result1}")
         assert result1["todays_count"] >= 2
+        assert result1["tomorrows_count"] >= 1
 
         # Verify idempotency keys in ReminderLog
         log_b1 = ReminderLog.query.filter_by(
@@ -74,6 +87,15 @@ def test_anniversary_reminders():
         ).first()
         assert log_b1 is not None
         assert log_b1.idempotency_key == f"CUST_{b1.id}_Y{today.year}_whatsapp_today_greeting"
+
+        log_b4 = ReminderLog.query.filter_by(
+            customer_id=b4.id,
+            anniversary_year=tomorrow_date.year,
+            channel="whatsapp",
+            reminder_type="eve_1day_greeting",
+        ).first()
+        assert log_b4 is not None
+        assert log_b4.idempotency_key == f"CUST_{b4.id}_Y{tomorrow_date.year}_whatsapp_eve_1day_greeting"
 
         log_b2 = ReminderLog.query.filter_by(
             customer_id=b2.id,
@@ -89,10 +111,10 @@ def test_anniversary_reminders():
         result2 = ReminderService.process_daily_reminders()
         logs_count_after = ReminderLog.query.count()
         assert logs_count_before == logs_count_after, "FATAL: Duplicate reminder logs were created on second run!"
-        print("[+] Verified Idempotency: Zero duplicate reminders created on re-run.")
+        print("[+] Verified Idempotency: Zero duplicate reminders created on re-run (Both Today & Eve).")
 
         # Cleanup test brides and logs
-        for b in [b1, b2, b3]:
+        for b in [b1, b2, b3, b4]:
             ReminderLog.query.filter_by(customer_id=b.id).delete()
             db.session.delete(b)
         db.session.commit()

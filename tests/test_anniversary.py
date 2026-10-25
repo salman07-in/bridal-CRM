@@ -94,3 +94,32 @@ def test_upcoming_7_days_anniversaries(app):
         assert len(matched) == 1
         assert matched[0]["days_away"] == 4
         assert matched[0]["years"] == 4
+
+
+def test_tomorrows_anniversaries_1_day_prior(app):
+    ref_date = date(2024, 7, 10)
+
+    with app.app_context():
+        # Bride celebrating tomorrow: July 11
+        cust = Customer(
+            customer_code="SAF-TOMORROW",
+            full_name="Tomorrow Eve Bride",
+            mobile_number="9876544444",
+            wedding_date=date(2021, 7, 11),
+        )
+        db.session.add(cust)
+        db.session.commit()
+
+        # On July 10, tomorrow's list should find this bride
+        tomorrows = AnniversaryService.get_tomorrows_anniversaries(reference_date=ref_date)
+        matched = [x for x in tomorrows if x["customer"].id == cust.id]
+        assert len(matched) == 1
+        assert matched[0]["days_away"] == 1
+        assert matched[0]["years"] == 3
+        assert matched[0]["is_tomorrow"] is True
+
+        # Check Eve WhatsApp URL generation
+        eve_url = cust.get_eve_whatsapp_url(years=3, salon_name="Safiya's Makeover")
+        assert "919876544444" in eve_url
+        assert "Tomorrow" in eve_url or "Kal" in eve_url
+        assert "20%25" in eve_url or "20%" in eve_url

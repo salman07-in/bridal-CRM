@@ -96,6 +96,50 @@ class AnniversaryService:
         return sorted(results, key=lambda x: x["customer"].full_name)
 
     @classmethod
+    def get_tomorrows_anniversaries(cls, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
+        """Get all customers celebrating their wedding anniversary tomorrow (1-day prior / Eve alert)."""
+        today = reference_date or cls.get_kolkata_today()
+        tomorrow = today + timedelta(days=1)
+        target_year = tomorrow.year
+        is_tomorrow_leap = calendar.isleap(target_year)
+
+        query = Customer.query.filter(Customer.wedding_date.isnot(None))
+
+        # Check for matching month and day
+        # If tomorrow is Feb 28 in a non-leap year, include Feb 29 brides
+        if tomorrow.month == 2 and tomorrow.day == 28 and not is_tomorrow_leap:
+            query = query.filter(
+                Customer.wedding_date.isnot(None),
+                extract("month", Customer.wedding_date) == 2,
+                extract("day", Customer.wedding_date).in_([28, 29]),
+            )
+        else:
+            query = query.filter(
+                Customer.wedding_date.isnot(None),
+                extract("month", Customer.wedding_date) == tomorrow.month,
+                extract("day", Customer.wedding_date) == tomorrow.day,
+            )
+
+        # Exclude marriages that happened in the target year (anniversaries start at year 1+)
+        customers = query.filter(Customer.wedding_date <= date(target_year - 1, 12, 31)).all()
+
+        results = []
+        for c in customers:
+            years = target_year - c.wedding_date.year
+            if years >= 1:
+                results.append({
+                    "customer": c,
+                    "anniversary_date": tomorrow,
+                    "years": years,
+                    "target_year": target_year,
+                    "is_today": False,
+                    "is_tomorrow": True,
+                    "days_away": 1,
+                })
+
+        return sorted(results, key=lambda x: x["customer"].full_name)
+
+    @classmethod
     def get_upcoming_anniversaries(cls, days: int = 7, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
         """Get customers celebrating anniversaries within the next `days` days (e.g. 1 to 7 days ahead)."""
         today = reference_date or cls.get_kolkata_today()
@@ -194,6 +238,7 @@ class AnniversaryService:
         total_brides = Customer.query.count()
         missing_dates_count = Customer.query.filter(Customer.wedding_date.is_(None)).count()
         todays_anniversaries = cls.get_todays_anniversaries(today)
+        tomorrows_anniversaries = cls.get_tomorrows_anniversaries(today)
         upcoming_7days = cls.get_upcoming_anniversaries(7, today)
         pending_reminders_count = ReminderLog.query.filter_by(status="pending").count()
         whatsapp_consented_count = Customer.query.filter_by(whatsapp_consent=True).count()
@@ -202,10 +247,12 @@ class AnniversaryService:
             "today": today,
             "total_brides": total_brides,
             "today_count": len(todays_anniversaries),
+            "tomorrow_count": len(tomorrows_anniversaries),
             "upcoming_7day_count": len(upcoming_7days),
             "missing_dates_count": missing_dates_count,
             "pending_reminders_count": pending_reminders_count,
             "whatsapp_consented_count": whatsapp_consented_count,
             "todays_anniversaries": todays_anniversaries,
+            "tomorrows_anniversaries": tomorrows_anniversaries,
             "upcoming_anniversaries": upcoming_7days,
         }

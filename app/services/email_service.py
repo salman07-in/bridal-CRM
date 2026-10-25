@@ -100,6 +100,7 @@ class EmailService:
         todays_anniversaries: List[Dict[str, Any]],
         upcoming_anniversaries: List[Dict[str, Any]],
         missing_dates_count: int,
+        tomorrows_anniversaries: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Compiles and sends the daily summary digest to the salon owner."""
         config = cls.get_smtp_config()
@@ -107,6 +108,8 @@ class EmailService:
 
         if not owner_email:
             return {"success": False, "error": "Salon owner email is not configured"}
+
+        tomorrows_list = tomorrows_anniversaries or []
 
         today_rows = ""
         if todays_anniversaries:
@@ -119,12 +122,28 @@ class EmailService:
                     <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; color: #D4738C; font-weight: bold;">{item['years']} Year(s)</td>
                     <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; color: #4A5568;">{c.service_package or 'Bridal'}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; text-align: center;">
-                        <a href="{c.whatsapp_click_url}" style="background-color: #25D366; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px;">WhatsApp</a>
+                        <a href="{c.get_today_whatsapp_url(item['years'])}" style="background-color: #25D366; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px;">WhatsApp</a>
                     </td>
                 </tr>
                 """
         else:
             today_rows = "<tr><td colspan='5' style='padding: 16px; text-align: center; color: #A0AEC0;'>No wedding anniversaries today.</td></tr>"
+
+        tomorrow_rows = ""
+        if tomorrows_list:
+            for item in tomorrows_list:
+                c = item["customer"]
+                tomorrow_rows += f"""
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; font-weight: 600; color: #2D3748;">{c.full_name}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; color: #4A5568;">{c.mobile_number}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; color: #805AD5; font-weight: bold;">{item['years']} Year(s) (Tomorrow)</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; color: #4A5568;">{c.service_package or 'Bridal'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #EDF2F7; text-align: center;">
+                        <a href="{c.get_eve_whatsapp_url(item['years'])}" style="background-color: #805AD5; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px;">Advance Wish</a>
+                    </td>
+                </tr>
+                """
 
         upcoming_rows = ""
         if upcoming_anniversaries:
@@ -141,7 +160,7 @@ class EmailService:
         else:
             upcoming_rows = "<tr><td colspan='3' style='padding: 12px; text-align: center; color: #A0AEC0;'>No upcoming anniversaries in the next 7 days.</td></tr>"
 
-        subject = f"💍 Bridal Anniversary Digest ({len(todays_anniversaries)} Today, {len(upcoming_anniversaries)} Upcoming)"
+        subject = f"💍 Bridal Anniversary Digest ({len(todays_anniversaries)} Today, {len(tomorrows_list)} Tomorrow Eve, {len(upcoming_anniversaries)} Upcoming)"
 
         html = f"""
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; border: 1px solid #E2E8F0; border-radius: 8px; background-color: #FFFFFF;">
@@ -169,6 +188,27 @@ class EmailService:
                     </tbody>
                 </table>
             </div>
+
+            {f'''<div style="margin-bottom: 24px;">
+                <h3 style="color: #805AD5; font-size: 16px; border-bottom: 2px solid #FAF5FF; padding-bottom: 8px; margin-bottom: 12px;">
+                    ✨ Tomorrow's Anniversaries &bull; 1-Day Prior Notice ({len(tomorrows_list)})
+                </h3>
+                <p style="font-size: 12px; color: #718096; margin-top: -6px; margin-bottom: 10px;">Send advance greetings &amp; 20% pampering offers today so brides can book for their big celebration!</p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background-color: #FAF5FF; color: #6B46C1; text-align: left;">
+                            <th style="padding: 8px 10px;">Bride</th>
+                            <th style="padding: 8px 10px;">Mobile</th>
+                            <th style="padding: 8px 10px;">Anniversary</th>
+                            <th style="padding: 8px 10px;">Package</th>
+                            <th style="padding: 8px 10px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tomorrow_rows}
+                    </tbody>
+                </table>
+            </div>''' if tomorrow_rows else ''}
 
             <div style="margin-bottom: 24px;">
                 <h3 style="color: #2D3748; font-size: 15px; border-bottom: 2px solid #FDF7F8; padding-bottom: 6px; margin-bottom: 10px;">

@@ -89,6 +89,29 @@ class Customer(db.Model):
         digits = "".join(filter(str.isdigit, self.international_phone))
         return f"https://wa.me/{digits}"
 
+    def get_eve_whatsapp_url(self, years: int, salon_name: str = "Safiya's Makeover") -> str:
+        """Returns WhatsApp click-to-chat URL with pre-filled 1-day prior (Eve) greeting + pampering offer."""
+        import urllib.parse
+        digits = "".join(filter(str.isdigit, self.international_phone))
+        text = (
+            f"Dear {self.full_name} Ji! 💖\n\n"
+            f"Kal aapki {years}th Wedding Anniversary hai! {salon_name} ki poori team ki taraf se dher saari advance mubarakbaad. 🎉💐\n\n"
+            f"Aapke is special din ke celebration ke liye hamari taraf se exclusive 20% Pampering Gift Voucher aapke liye available hai (Hair Spa / Facial / Glow treatment).\n\n"
+            f"Wishing you and your family a wonderful celebration tomorrow!"
+        )
+        return f"https://wa.me/{digits}?text={urllib.parse.quote(text)}"
+
+    def get_today_whatsapp_url(self, years: int, salon_name: str = "Safiya's Makeover") -> str:
+        """Returns WhatsApp click-to-chat URL with pre-filled today's anniversary celebration greeting."""
+        import urllib.parse
+        digits = "".join(filter(str.isdigit, self.international_phone))
+        text = (
+            f"Dear {self.full_name} Ji! 💐💍\n\n"
+            f"Happy {years}th Wedding Anniversary! May your bond grow stronger and more beautiful with each passing year.\n\n"
+            f"Warmest wishes and love from {salon_name} family! ✨"
+        )
+        return f"https://wa.me/{digits}?text={urllib.parse.quote(text)}"
+
     def get_anniversary_year_count(self, target_year: int) -> int:
         """Calculate how many years of marriage on target_year."""
         if not self.wedding_date:
