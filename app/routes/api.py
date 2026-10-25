@@ -133,7 +133,7 @@ def mark_reminder_sent():
         return jsonify({"status": "error", "message": "reminder_id or idempotency_key is required"}), 400
 
     if reminder_id:
-        log = ReminderLog.query.get(reminder_id)
+        log = db.session.get(ReminderLog, reminder_id)
     else:
         log = ReminderLog.query.filter_by(idempotency_key=idempotency_key).first()
 

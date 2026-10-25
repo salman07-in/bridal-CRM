@@ -44,7 +44,7 @@ def index():
 @reminders_bp.route("/retry/<int:id>", methods=["POST"])
 @login_required
 def retry(id: int):
-    log = ReminderLog.query.get_or_404(id)
+    log = db.get_or_404(ReminderLog, id)
     cust_name = log.customer.full_name if log.customer else "Unknown"
 
     result = ReminderService.retry_reminder(id)

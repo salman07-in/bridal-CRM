@@ -76,7 +76,7 @@ def test_api_mark_reminder_sent(client, app):
     assert data["status"] == "success"
 
     with app.app_context():
-        updated_log = ReminderLog.query.get(log_id)
+        updated_log = db.session.get(ReminderLog, log_id)
         assert updated_log.status == "sent"
         assert updated_log.sent_at is not None
         assert "Delivered via n8n test" in updated_log.metadata_json

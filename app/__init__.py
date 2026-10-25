@@ -10,7 +10,7 @@ from app.models.reminder_log import ReminderLog
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 def format_inr(number):

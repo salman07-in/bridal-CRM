@@ -84,7 +84,7 @@ def test_edit_customer(auth_client, app):
     assert res.status_code == 200
 
     with app.app_context():
-        updated = Customer.query.get(cid)
+        updated = db.session.get(Customer, cid)
         assert updated.full_name == "Updated Name"
         assert updated.wedding_date == date(2023, 1, 15)
 
@@ -104,5 +104,5 @@ def test_delete_customer(auth_client, app):
     assert res.status_code == 200
 
     with app.app_context():
-        deleted = Customer.query.get(cid)
+        deleted = db.session.get(Customer, cid)
         assert deleted is None

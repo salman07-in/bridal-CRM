@@ -120,7 +120,7 @@ def create():
 @customers_bp.route("/<int:id>")
 @login_required
 def detail(id: int):
-    customer = Customer.query.get_or_404(id)
+    customer = db.get_or_404(Customer, id)
     reminders = (
         ReminderLog.query.filter_by(customer_id=customer.id)
         .order_by(ReminderLog.created_at.desc())
@@ -158,7 +158,7 @@ def detail(id: int):
 @customers_bp.route("/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit(id: int):
-    customer = Customer.query.get_or_404(id)
+    customer = db.get_or_404(Customer, id)
     form = CustomerForm(original_mobile=customer.clean_phone, obj=customer)
 
     if form.validate_on_submit():
@@ -207,7 +207,7 @@ def edit(id: int):
 @customers_bp.route("/<int:id>/delete", methods=["POST"])
 @login_required
 def delete(id: int):
-    customer = Customer.query.get_or_404(id)
+    customer = db.get_or_404(Customer, id)
     cust_name = customer.full_name
     cust_code = customer.customer_code
 

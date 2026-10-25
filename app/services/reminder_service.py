@@ -216,7 +216,7 @@ class ReminderService:
     @classmethod
     def retry_reminder(cls, log_id: int) -> Dict[str, Any]:
         """Manually trigger retry for a failed or pending reminder from the UI."""
-        log = ReminderLog.query.get(log_id)
+        log = db.session.get(ReminderLog, log_id)
         if not log:
             return {"success": False, "error": "Reminder log not found"}
 
