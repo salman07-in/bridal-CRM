@@ -31,6 +31,7 @@ def index():
         # Reminder Rules
         Setting.set_value("reminder_advance_days", form.reminder_advance_days.data, "Upcoming reminder days forecast")
         Setting.set_value("send_owner_daily_digest", form.send_owner_daily_digest.data, "Enable owner daily digest email")
+        Setting.set_value("pre_makeup_reminder_enabled", form.pre_makeup_reminder_enabled.data, "Enable 1-day advance pre-makeup reminder")
 
         # SMTP Email
         Setting.set_value("smtp_enabled", form.smtp_enabled.data, "Enable SMTP email")
@@ -76,6 +77,7 @@ def index():
 
         form.reminder_advance_days.data = Setting.get_int("reminder_advance_days", cfg.get("REMINDER_ADVANCE_DAYS", 7))
         form.send_owner_daily_digest.data = Setting.get_bool("send_owner_daily_digest", cfg.get("SEND_OWNER_DAILY_DIGEST", True))
+        form.pre_makeup_reminder_enabled.data = Setting.get_bool("pre_makeup_reminder_enabled", True)
 
         form.smtp_enabled.data = Setting.get_bool("smtp_enabled", cfg.get("SMTP_ENABLED", False))
         form.smtp_host.data = Setting.get_value("smtp_host", cfg.get("SMTP_HOST", "smtp.gmail.com"))

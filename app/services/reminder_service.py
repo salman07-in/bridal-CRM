@@ -125,9 +125,43 @@ class ReminderService:
             )
             created_logs += 1
 
-        # 4. Owner Daily Digest Email
+        # 4. Queue 1-Day Pre-Makeup Appointment Reminders (if enabled)
+        pre_makeup_enabled = Setting.get_bool("pre_makeup_reminder_enabled", True)
+        pre_makeup_count = 0
+        if pre_makeup_enabled:
+            tomorrows_makeups = AnniversaryService.get_tomorrows_makeup_appointments(today)
+            pre_makeup_count = len(tomorrows_makeups)
+            for item in tomorrows_makeups:
+                cust = item["customer"]
+                if cust.pre_makeup_reminder_enabled:
+                    mk_key = f"CUST_{cust.id}_MAKEUP_{item['makeup_date'].isoformat()}_pre_makeup"
+                    existing_mk_log = ReminderLog.query.filter_by(idempotency_key=mk_key).first()
+                    if not existing_mk_log:
+                        mk_log = ReminderLog(
+                            idempotency_key=mk_key,
+                            customer_id=cust.id,
+                            anniversary_year=today.year,
+                            channel="whatsapp",
+                            reminder_type="pre_makeup_eve",
+                            status="pending",
+                            scheduled_for=item["makeup_date"],
+                        )
+                        db.session.add(mk_log)
+                        db.session.flush()
+                        created_logs += 1
+
+                    log_to_send = existing_mk_log or mk_log
+                    if log_to_send.status in ("pending", "failed"):
+                        if cust.whatsapp_consent:
+                            mk_res = cls.send_whatsapp_pre_makeup_reminder(cust, log_to_send)
+                            if mk_res.get("success"):
+                                whatsapp_dispatches += 1
+                        else:
+                            log_to_send.error_message = "WhatsApp consent not granted by customer. Available for manual phone/message."
+
+        # 5. Owner Daily Digest Email
         owner_digest_enabled = Setting.get_bool("send_owner_daily_digest", True)
-        if owner_digest_enabled and (todays_anniversaries or tomorrows_anniversaries or upcoming_anniversaries or missing_dates > 0):
+        if owner_digest_enabled and (todays_anniversaries or tomorrows_anniversaries or upcoming_anniversaries or missing_dates > 0 or pre_makeup_count > 0):
             # Check if owner digest already sent today
             owner_key = f"OWNER_DIGEST_{today.isoformat()}"
             existing_owner_log = ReminderLog.query.filter_by(idempotency_key=owner_key).first()
@@ -170,6 +204,7 @@ class ReminderService:
             "today": today.isoformat(),
             "todays_count": len(todays_anniversaries),
             "tomorrows_count": len(tomorrows_anniversaries),
+            "pre_makeup_count": pre_makeup_count,
             "upcoming_count": len(upcoming_anniversaries),
             "created_or_found_logs": created_logs,
             "owner_digest_status": owner_digest_status,
@@ -296,6 +331,65 @@ class ReminderService:
             return {"success": False, "error": str(e)}
 
     @classmethod
+    def send_whatsapp_pre_makeup_reminder(cls, customer: Customer, log: ReminderLog) -> Dict[str, Any]:
+        """Dispatches an appointment notice via official WhatsApp Cloud API 1 day before makeup date."""
+        if not customer.whatsapp_consent:
+            log.mark_failed("Cannot send WhatsApp: Customer has not provided WhatsApp consent")
+            return {"success": False, "error": "No WhatsApp consent"}
+
+        token = Setting.get_value("whatsapp_access_token", current_app.config.get("WHATSAPP_ACCESS_TOKEN", ""))
+        phone_id = Setting.get_value("whatsapp_phone_number_id", current_app.config.get("WHATSAPP_PHONE_NUMBER_ID", ""))
+        template_name = Setting.get_value("whatsapp_pre_makeup_template", "pre_makeup_reminder_v1")
+        enabled = Setting.get_bool("whatsapp_enabled", current_app.config.get("WHATSAPP_ENABLED", False))
+
+        if not enabled or not token or not phone_id:
+            log.error_message = "WhatsApp Cloud API not enabled or credentials not configured"
+            return {"success": False, "error": "WhatsApp API not configured"}
+
+        url = f"https://graph.facebook.com/v19.0/{phone_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        recipient_phone = "91" + customer.clean_phone
+        bal_str = f"₹ {customer.balance_due:,.2f}" if customer.balance_due > 0 else "NIL (Fully Paid)"
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": recipient_phone,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {"code": "en"},
+                "components": [
+                    {
+                        "type": "body",
+                        "parameters": [
+                            {"type": "text", "text": customer.full_name},
+                            {"type": "text", "text": customer.service_package or "Bridal Makeover"},
+                            {"type": "text", "text": bal_str},
+                            {"type": "text", "text": Setting.get_value("salon_name", "Safiya's Makeover")},
+                        ],
+                    }
+                ],
+            },
+        }
+
+        try:
+            res = requests.post(url, headers=headers, json=payload, timeout=12)
+            if res.status_code in (200, 201):
+                res_data = res.json()
+                log.mark_sent(json.dumps(res_data))
+                return {"success": True, "data": res_data}
+            else:
+                err_msg = f"HTTP {res.status_code}: {res.text}"
+                log.mark_failed(err_msg)
+                return {"success": False, "error": err_msg}
+        except Exception as e:
+            log.mark_failed(str(e))
+            return {"success": False, "error": str(e)}
+
+    @classmethod
     def retry_reminder(cls, log_id: int) -> Dict[str, Any]:
         """Manually trigger retry for a failed or pending reminder from the UI."""
         log = db.session.get(ReminderLog, log_id)
@@ -308,7 +402,9 @@ class ReminderService:
 
         if log.channel == "whatsapp":
             years = cust.get_anniversary_year_count(log.anniversary_year)
-            if log.reminder_type == "eve_1day_greeting":
+            if log.reminder_type == "pre_makeup_eve":
+                result = cls.send_whatsapp_pre_makeup_reminder(cust, log)
+            elif log.reminder_type == "eve_1day_greeting":
                 result = cls.send_whatsapp_eve_greeting(cust, years, log)
             else:
                 result = cls.send_whatsapp_greeting(cust, years, log)

@@ -158,11 +158,23 @@ def create_app(config_class=None):
             return jsonify({"status": "error", "message": "Rate limit exceeded"}), 429
         return render_template("errors/429.html"), 429
 
-    @app.errorhandler(500)
-    def internal_error(error):
-        db.session.rollback()
-        if request.path.startswith("/api/"):
-            return jsonify({"status": "error", "message": "Internal server error"}), 500
-        return render_template("errors/500.html"), 500
+    # Auto-migrate SQLite columns if table exists
+    with app.app_context():
+        try:
+            from sqlalchemy import inspect, text
+            inspector = inspect(db.engine)
+            if "customers" in inspector.get_table_names():
+                cols = [c["name"] for c in inspector.get_columns("customers")]
+                if "slip_number" not in cols:
+                    db.session.execute(text("ALTER TABLE customers ADD COLUMN slip_number VARCHAR(50)"))
+                if "advance_amount" not in cols:
+                    db.session.execute(text("ALTER TABLE customers ADD COLUMN advance_amount FLOAT DEFAULT 0.0"))
+                if "booking_type" not in cols:
+                    db.session.execute(text("ALTER TABLE customers ADD COLUMN booking_type VARCHAR(50) DEFAULT 'Bridal Makeup'"))
+                if "pre_makeup_reminder_enabled" not in cols:
+                    db.session.execute(text("ALTER TABLE customers ADD COLUMN pre_makeup_reminder_enabled BOOLEAN DEFAULT 1"))
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     return app

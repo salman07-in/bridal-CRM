@@ -76,18 +76,36 @@ class CustomerForm(FlaskForm):
         render_kw={"placeholder": "e.g. 9876543210", "class": "form-control"},
     )
 
+    slip_number = StringField(
+        "Booking Slip / Receipt No.",
+        validators=[Optional(), Length(max=50)],
+        render_kw={"placeholder": "e.g. SLIP-1042 / BK-089", "class": "form-control", "id": "brideSlipInput"},
+    )
+
+    booking_type = SelectField(
+        "Booking / Service Category",
+        choices=[
+            SelectChoice("Bridal Makeup", "Bridal Makeup (Main Wedding)"),
+            SelectChoice("Engagement Makeup", "Engagement / Roka Makeup"),
+            SelectChoice("Party Makeup", "Party Makeup / Reception Guest"),
+        ],
+        default="Bridal Makeup",
+        validators=[DataRequired(message="Please select service category.")],
+        render_kw={"class": "form-select", "id": "brideBookingTypeInput"},
+    )
+
     wedding_date = DateField(
         "Wedding Date (Sole Anniversary Trigger)",
         validators=[Optional()],
         format="%Y-%m-%d",
-        render_kw={"class": "form-control", "type": "date"},
+        render_kw={"class": "form-control", "type": "date", "id": "brideWeddingDateInput"},
     )
 
     makeup_date = DateField(
         "Makeup / Service Date",
         validators=[Optional()],
         format="%Y-%m-%d",
-        render_kw={"class": "form-control", "type": "date"},
+        render_kw={"class": "form-control", "type": "date", "id": "brideMakeupDateInput"},
     )
 
     service_package = SelectField(
@@ -103,7 +121,15 @@ class CustomerForm(FlaskForm):
         "Total Amount (₹ INR)",
         validators=[Optional()],
         places=2,
-        render_kw={"placeholder": "e.g. 15000", "class": "form-control", "step": "500"},
+        render_kw={"placeholder": "e.g. 15000", "class": "form-control", "step": "500", "id": "brideAmountInput"},
+    )
+
+    advance_amount = DecimalField(
+        "Advance Paid (₹ INR)",
+        validators=[Optional()],
+        places=2,
+        default=0,
+        render_kw={"placeholder": "e.g. 5000", "class": "form-control", "step": "500", "id": "brideAdvanceInput"},
     )
 
     salon_branch = SelectField(
@@ -128,8 +154,13 @@ class CustomerForm(FlaskForm):
         },
     )
 
+    pre_makeup_reminder_enabled = BooleanField(
+        "Send 1-day advance appointment reminder before makeup date",
+        default=True,
+    )
+
     whatsapp_consent = BooleanField(
-        "Bride has given WhatsApp consent for anniversary greetings and updates",
+        "Client has given WhatsApp consent for reminders and greetings",
         default=True,
     )
 

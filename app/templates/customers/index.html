@@ -3,34 +3,88 @@
 {% block title %}Customer Register — {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
     <div>
         <h2 class="h3 fw-bold mb-1">Bridal Customer Register</h2>
-        <p class="text-muted small mb-0">Total recorded brides: <strong>{{ pagination.total }}</strong></p>
+        <p class="text-muted small mb-0">Total recorded brides: <strong>{{ total_all }}</strong> | Total Pending Balance: <span class="badge bg-danger-subtle text-danger fw-bold font-monospace">{{ total_pending_amount | inr }}</span></p>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ url_for('import_export.import_wizard') }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel/CSV
         </a>
         <a href="{{ url_for('customers.create') }}" class="btn btn-salon-primary btn-sm">
-            <i class="bi bi-person-plus-fill me-1"></i> Add New Bride
+            <i class="bi bi-person-plus-fill me-1"></i> Add New Booking
         </a>
     </div>
 </div>
 
+<!-- Navigation Tabs for Separating Bookings -->
+<div class="mb-3">
+    <ul class="nav nav-pills bg-white p-2 rounded-3 shadow-sm border">
+        <li class="nav-item">
+            <a class="nav-link py-2 px-3 fw-semibold {% if tab == 'all' or not tab %}active{% endif %}" href="{{ url_for('customers.index', tab='all', q=search, branch=branch, booking_type=booking_type) }}">
+                <i class="bi bi-people me-1"></i> All Clients
+                <span class="badge bg-secondary-subtle text-dark ms-1">{{ total_all }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link py-2 px-3 fw-semibold {% if tab == 'upcoming' %}active{% endif %}" href="{{ url_for('customers.index', tab='upcoming', q=search, branch=branch, booking_type=booking_type) }}">
+                <i class="bi bi-calendar-event me-1"></i> Upcoming Bookings
+                <span class="badge bg-stat-pink text-salon ms-1">{{ total_upcoming }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link py-2 px-3 fw-semibold {% if tab == 'completed' %}active{% endif %}" href="{{ url_for('customers.index', tab='completed', q=search, branch=branch, booking_type=booking_type) }}">
+                <i class="bi bi-check-circle me-1"></i> Completed Makeovers
+                <span class="badge bg-success-subtle text-success ms-1">{{ total_completed }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link py-2 px-3 fw-semibold text-danger {% if tab == 'pending_balance' %}active text-white bg-danger{% endif %}" href="{{ url_for('customers.index', tab='pending_balance', q=search, branch=branch, booking_type=booking_type) }}">
+                <i class="bi bi-cash-stack me-1"></i> Pending Balance Due
+                <span class="badge {% if tab == 'pending_balance' %}bg-white text-danger{% else %}bg-danger text-white{% endif %} ms-1">{{ total_pending_balance }}</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+{% if tab == 'pending_balance' %}
+<div class="alert alert-warning border-warning-subtle d-flex justify-content-between align-items-center py-2 px-3 mb-3">
+    <div>
+        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+        <strong>Pending Balance Collection View:</strong> Kul <strong>{{ total_pending_balance }}</strong> clients ka baaki hisab bacha hai.
+    </div>
+    <div class="h5 mb-0 font-monospace text-danger fw-bold">
+        Total Due: {{ total_pending_amount | inr }}
+    </div>
+</div>
+{% endif %}
+
 <!-- Search & Filter Card -->
 <div class="card card-salon mb-4 p-3">
     <form method="GET" action="{{ url_for('customers.index') }}" class="row g-2 align-items-center">
-        <!-- Search Query -->
-        <div class="col-md-4">
+        <input type="hidden" name="tab" value="{{ tab or 'all' }}">
+
+        <!-- Search Query (Slip No, Name, Phone, Code) -->
+        <div class="col-md-3">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" name="q" id="customerQuickSearch" class="form-control" placeholder="Search by name, phone or SAF code..." value="{{ search }}">
+                <input type="text" name="q" id="customerQuickSearch" class="form-control" placeholder="Search slip #, name, phone, code..." value="{{ search }}">
             </div>
         </div>
 
+        <!-- Booking Type Filter -->
+        <div class="col-md-2">
+            <select name="booking_type" class="form-select form-select-sm">
+                <option value="">All Categories</option>
+                <option value="Bridal Makeup" {% if booking_type == 'Bridal Makeup' %}selected{% endif %}>Bridal Makeup</option>
+                <option value="Engagement Makeup" {% if booking_type == 'Engagement Makeup' %}selected{% endif %}>Engagement Makeup</option>
+                <option value="Party Makeup" {% if booking_type == 'Party Makeup' %}selected{% endif %}>Party Makeup</option>
+            </select>
+        </div>
+
         <!-- Branch Filter -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select name="branch" class="form-select form-select-sm">
                 <option value="">All Branches</option>
                 {% for b in branches %}
@@ -60,8 +114,8 @@
         <!-- Filter Actions -->
         <div class="col-md-1 d-flex gap-1">
             <button type="submit" class="btn btn-sm btn-salon-primary w-100" title="Apply Filters">Filter</button>
-            {% if search or branch or filter_missing_date or filter_consent %}
-            <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-light border" title="Reset Filters"><i class="bi bi-x"></i></a>
+            {% if search or branch or booking_type or filter_missing_date or filter_consent %}
+            <a href="{{ url_for('customers.index', tab=tab) }}" class="btn btn-sm btn-light border" title="Reset Filters"><i class="bi bi-x"></i></a>
             {% endif %}
         </div>
     </form>
@@ -72,73 +126,138 @@
     <div class="card-body p-0">
         {% if pagination.items %}
         <div class="table-responsive">
-            <table class="table table-salon align-middle">
+            <table class="table table-salon align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Bride Full Name</th>
-                        <th>Mobile</th>
-                        <th>Wedding Date</th>
+                        <th>Slip #</th>
+                        <th>Client Details</th>
+                        <th>Category</th>
                         <th>Makeup Date</th>
                         <th>Package</th>
-                        <th>Amount</th>
-                        <th>Consent</th>
+                        <th>Total</th>
+                        <th>Advance</th>
+                        <th>Balance Due</th>
+                        <th>Status</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in pagination.items %}
                     <tr>
+                        <!-- Slip Number -->
                         <td>
-                            <a href="{{ url_for('customers.detail', id=c.id) }}" class="badge bg-light text-dark border text-decoration-none font-monospace">
-                                {{ c.customer_code }}
-                            </a>
-                        </td>
-                        <td>
-                            <div class="fw-bold text-dark">{{ c.full_name }}</div>
-                            <small class="text-muted">{{ c.salon_branch or 'Main Branch' }}</small>
-                        </td>
-                        <td>
-                            <div class="font-monospace">{{ c.mobile_number | phone_display }}</div>
-                            <a href="{{ c.whatsapp_click_url }}" target="_blank" class="text-success text-decoration-none small" style="font-size: 0.75rem;">
-                                <i class="bi bi-whatsapp"></i> Chat
-                            </a>
-                        </td>
-                        <td>
-                            {% if c.wedding_date %}
-                                <span class="badge bg-stat-pink text-salon border">
-                                    <i class="bi bi-heart-fill me-1"></i>{{ c.wedding_date | date_in }}
+                            {% if c.slip_number %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace fw-bold">
+                                    #{{ c.slip_number }}
                                 </span>
                             {% else %}
-                                <span class="badge bg-warning text-dark border" title="Wedding date is unknown">
-                                    <i class="bi bi-exclamation-circle me-1"></i>Missing
-                                </span>
+                                <span class="text-muted small font-monospace">—</span>
                             {% endif %}
                         </td>
+
+                        <!-- Client Details -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        <a href="{{ url_for('customers.detail', id=c.id) }}" class="text-dark text-decoration-none hover-salon">
+                                            {{ c.full_name }}
+                                        </a>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 font-monospace small text-muted">
+                                        <span>{{ c.mobile_number | phone_display }}</span>
+                                        <a href="{{ c.whatsapp_click_url }}" target="_blank" class="text-success text-decoration-none" title="Chat on WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Category -->
+                        <td>
+                            {% if c.booking_type == 'Bridal Makeup' %}
+                                <span class="badge bg-stat-pink text-salon border"><i class="bi bi-gem me-1"></i>Bridal</span>
+                            {% elif c.booking_type == 'Engagement Makeup' %}
+                                <span class="badge bg-info-subtle text-info border"><i class="bi bi-flower1 me-1"></i>Engagement</span>
+                            {% elif c.booking_type == 'Party Makeup' %}
+                                <span class="badge bg-warning-subtle text-warning border"><i class="bi bi-stars me-1"></i>Party</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary">{{ c.booking_type or 'Bridal' }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Makeup Date -->
                         <td>
                             {% if c.makeup_date %}
-                                <span class="text-muted small">{{ c.makeup_date | date_in }}</span>
+                                <div><strong class="text-dark">{{ c.makeup_date | date_in }}</strong></div>
+                                {% if c.makeup_date > current_date %}
+                                    <small class="badge bg-stat-pink text-salon border" style="font-size: 0.68rem;">Upcoming</small>
+                                {% else %}
+                                    <small class="badge bg-light text-muted border" style="font-size: 0.68rem;">Completed</small>
+                                {% endif %}
+                            {% elif c.wedding_date %}
+                                <div><span class="text-salon">{{ c.wedding_date | date_in }}</span></div>
+                                <small class="text-muted" style="font-size: 0.68rem;">(Wedding Date)</small>
                             {% else %}
-                                <span class="text-muted small">-</span>
+                                <span class="badge bg-warning text-dark border">Missing Date</span>
                             {% endif %}
                         </td>
+
+                        <!-- Package -->
                         <td>
                             <small class="text-dark">{{ c.service_package or 'Standard' }}</small>
                         </td>
+
+                        <!-- Total Amount -->
                         <td>
-                            <small class="fw-semibold text-dark">{{ c.amount | inr }}</small>
+                            <strong class="text-dark font-monospace">{{ c.total_amount | inr }}</strong>
                         </td>
+
+                        <!-- Advance Paid -->
                         <td>
-                            {% if c.whatsapp_consent %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Yes
-                                </span>
+                            <span class="text-success font-monospace small">₹ {{ "{:,.0f}".format(c.advance_paid) }}</span>
+                        </td>
+
+                        <!-- Balance Due -->
+                        <td>
+                            {% if c.balance_due > 0 %}
+                                <strong class="text-danger font-monospace">₹ {{ "{:,.0f}".format(c.balance_due) }}</strong>
                             {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border">No</span>
+                                <span class="text-success small fw-semibold"><i class="bi bi-check2 me-1"></i>₹ 0</span>
                             {% endif %}
                         </td>
+
+                        <!-- Payment Status Badge -->
+                        <td>
+                            {% if c.payment_status == 'Paid' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Paid
+                                </span>
+                            {% elif c.payment_status == 'Partial' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                    <i class="bi bi-clock-history me-1"></i>Due
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    Unpaid
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
+                                {% if c.balance_due > 0 %}
+                                <a href="{{ c.get_balance_reminder_whatsapp_url(app_name) }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Send Balance Reminder on WhatsApp">
+                                    <i class="bi bi-cash"></i>
+                                </a>
+                                {% endif %}
+                                {% if not c.is_makeup_completed and c.pre_makeup_reminder_enabled %}
+                                <a href="{{ c.get_pre_makeup_whatsapp_url(app_name) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Send 1-Day Pre-Makeup Appointment Notice">
+                                    <i class="bi bi-whatsapp"></i>
+                                </a>
+                                {% endif %}
                                 <a href="{{ url_for('customers.detail', id=c.id) }}" class="btn btn-light border" title="View Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
@@ -190,19 +309,19 @@
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.prev_num, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">Previous</a>
+                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.prev_num, tab=tab, q=search, branch=branch, booking_type=booking_type, missing_date=filter_missing_date, consent=filter_consent) }}">Previous</a>
                     </li>
                     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if p %}
                             <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('customers.index', page=p, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">{{ p }}</a>
+                                <a class="page-link" href="{{ url_for('customers.index', page=p, tab=tab, q=search, branch=branch, booking_type=booking_type, missing_date=filter_missing_date, consent=filter_consent) }}">{{ p }}</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.next_num, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">Next</a>
+                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.next_num, tab=tab, q=search, branch=branch, booking_type=booking_type, missing_date=filter_missing_date, consent=filter_consent) }}">Next</a>
                     </li>
                 </ul>
             </nav>
@@ -213,8 +332,8 @@
         <div class="text-center py-5">
             <div class="text-muted mb-2"><i class="bi bi-people fs-1 text-secondary opacity-50"></i></div>
             <h6 class="text-muted fw-normal">No customer records found matching your filters.</h6>
-            {% if search or branch or filter_missing_date or filter_consent %}
-            <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
+            {% if search or branch or booking_type or filter_missing_date or filter_consent %}
+            <a href="{{ url_for('customers.index', tab=tab) }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
             {% else %}
             <a href="{{ url_for('customers.create') }}" class="btn btn-sm btn-salon-primary mt-2">Add First Customer</a>
             {% endif %}

@@ -227,6 +227,49 @@ class AnniversaryService:
         return sorted(results, key=lambda x: (x["day"], x["customer"].full_name))
 
     @classmethod
+    def get_tomorrows_makeup_appointments(cls, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
+        """Get all clients who have their makeup appointment tomorrow (1-day prior)."""
+        today = reference_date or cls.get_kolkata_today()
+        tomorrow = today + timedelta(days=1)
+
+        customers = Customer.query.filter(Customer.makeup_date == tomorrow).order_by(Customer.full_name).all()
+        results = []
+        for c in customers:
+            results.append({
+                "customer": c,
+                "makeup_date": tomorrow,
+                "days_away": 1,
+                "booking_type": c.booking_type or "Bridal Makeup",
+                "package": c.service_package,
+                "balance_due": c.balance_due,
+            })
+        return results
+
+    @classmethod
+    def get_upcoming_makeup_appointments(cls, days: int = 15, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
+        """Get clients with makeup appointments in the next `days` days."""
+        today = reference_date or cls.get_kolkata_today()
+        end_date = today + timedelta(days=days)
+
+        customers = Customer.query.filter(
+            Customer.makeup_date >= today,
+            Customer.makeup_date <= end_date,
+        ).order_by(Customer.makeup_date.asc()).all()
+
+        results = []
+        for c in customers:
+            days_away = (c.makeup_date - today).days
+            results.append({
+                "customer": c,
+                "makeup_date": c.makeup_date,
+                "days_away": days_away,
+                "booking_type": c.booking_type or "Bridal Makeup",
+                "package": c.service_package,
+                "balance_due": c.balance_due,
+            })
+        return results
+
+    @classmethod
     def get_missing_wedding_dates(cls, limit: int = 50) -> List[Customer]:
         """Fetch records with missing wedding dates requiring review by salon staff."""
         return Customer.query.filter(Customer.wedding_date.is_(None)).order_by(Customer.created_at.desc()).limit(limit).all()
@@ -234,6 +277,7 @@ class AnniversaryService:
     @classmethod
     def get_dashboard_summary(cls) -> Dict[str, Any]:
         """Compile complete dashboard KPI metrics and lists."""
+        from sqlalchemy import func
         today = cls.get_kolkata_today()
         total_brides = Customer.query.count()
         missing_dates_count = Customer.query.filter(Customer.wedding_date.is_(None)).count()
@@ -242,6 +286,24 @@ class AnniversaryService:
         upcoming_7days = cls.get_upcoming_anniversaries(7, today)
         pending_reminders_count = ReminderLog.query.filter_by(status="pending").count()
         whatsapp_consented_count = Customer.query.filter_by(whatsapp_consent=True).count()
+
+        # Makeup appointments
+        tomorrows_makeups = cls.get_tomorrows_makeup_appointments(today)
+        upcoming_makeups = cls.get_upcoming_makeup_appointments(15, today)
+
+        # Financial balance totals
+        pending_clients = Customer.query.filter(
+            Customer.amount.isnot(None),
+            Customer.amount > func.coalesce(Customer.advance_amount, 0),
+        ).count()
+
+        pending_sum_row = db.session.query(
+            func.sum(Customer.amount - func.coalesce(Customer.advance_amount, 0))
+        ).filter(
+            Customer.amount.isnot(None),
+            Customer.amount > func.coalesce(Customer.advance_amount, 0),
+        ).first()
+        total_pending_amount = float(pending_sum_row[0] or 0.0) if pending_sum_row else 0.0
 
         return {
             "today": today,
@@ -255,4 +317,9 @@ class AnniversaryService:
             "todays_anniversaries": todays_anniversaries,
             "tomorrows_anniversaries": tomorrows_anniversaries,
             "upcoming_anniversaries": upcoming_7days,
+            "tomorrows_makeups": tomorrows_makeups,
+            "tomorrows_makeup_count": len(tomorrows_makeups),
+            "upcoming_makeups": upcoming_makeups,
+            "pending_clients_count": pending_clients,
+            "total_pending_amount": total_pending_amount,
         }

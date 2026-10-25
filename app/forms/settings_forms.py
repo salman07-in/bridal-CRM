@@ -29,6 +29,7 @@ class SettingsForm(FlaskForm):
         render_kw={"class": "form-control"},
     )
     send_owner_daily_digest = BooleanField("Send Automated Daily Digest to Salon Owner", default=True)
+    pre_makeup_reminder_enabled = BooleanField("Enable 1-Day Pre-Makeup Appointment Reminders", default=True)
 
     # SMTP Email Server
     smtp_enabled = BooleanField("Enable SMTP Email Sending")

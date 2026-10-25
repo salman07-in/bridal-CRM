@@ -19,9 +19,15 @@ class Customer(db.Model):
     
     service_package = db.Column(db.String(120), nullable=True)
     amount = db.Column(db.Float, nullable=True)
+    advance_amount = db.Column(db.Float, default=0.0, nullable=True)
+    slip_number = db.Column(db.String(50), nullable=True, index=True)
+    booking_type = db.Column(db.String(50), default="Bridal Makeup", nullable=False, index=True)
     salon_branch = db.Column(db.String(80), nullable=True, index=True)
     notes = db.Column(db.Text, nullable=True)
     
+    # Pre-makeup appointment reminder toggle (1 day before service)
+    pre_makeup_reminder_enabled = db.Column(db.Boolean, default=True, nullable=False)
+
     # WhatsApp consent status
     whatsapp_consent = db.Column(db.Boolean, default=False, nullable=False, index=True)
     
@@ -112,6 +118,77 @@ class Customer(db.Model):
         )
         return f"https://wa.me/{digits}?text={urllib.parse.quote(text)}"
 
+    @property
+    def total_amount(self) -> float:
+        return float(self.amount or 0.0)
+
+    @property
+    def advance_paid(self) -> float:
+        return float(self.advance_amount or 0.0)
+
+    @property
+    def balance_due(self) -> float:
+        return max(0.0, self.total_amount - self.advance_paid)
+
+    @property
+    def payment_status(self) -> str:
+        """Returns: 'Paid', 'Partial', or 'Unpaid'."""
+        if self.total_amount <= 0:
+            return "Unpaid"
+        if self.balance_due <= 0:
+            return "Paid"
+        if self.advance_paid > 0:
+            return "Partial"
+        return "Unpaid"
+
+    @property
+    def is_makeup_completed(self) -> bool:
+        """Returns True if the customer's makeup date or wedding date is in the past."""
+        today = date.today()
+        if self.makeup_date:
+            return self.makeup_date < today
+        if self.wedding_date:
+            return self.wedding_date < today
+        return False
+
+    def get_pre_makeup_whatsapp_url(self, salon_name: str = "Safiya's Makeover") -> str:
+        """Returns WhatsApp click-to-chat URL with pre-filled 1-day prior pre-makeup appointment reminder."""
+        import urllib.parse
+        digits = "".join(filter(str.isdigit, self.international_phone))
+        slip_text = f"Slip No: #{self.slip_number}\n" if self.slip_number else ""
+        bal_text = f"₹ {self.balance_due:,.2f}" if self.balance_due > 0 else "NIL (Fully Paid)"
+        
+        text = (
+            f"Dear {self.full_name} Ji! 💖\n\n"
+            f"Kal aapka {self.booking_type or 'Bridal'} Makeup Appointment hai at {salon_name}! ✨\n\n"
+            f"{slip_text}"
+            f"💄 Package: {self.service_package or 'Bridal Makeover'}\n"
+            f"💰 Total Amount: ₹ {self.total_amount:,.2f}\n"
+            f"💵 Advance Paid: ₹ {self.advance_paid:,.2f}\n"
+            f"⚠️ Balance Due: {bal_text}\n"
+            f"🏠 Branch / Location: {self.salon_branch or 'Main Studio'}\n\n"
+            f"Please reach on your scheduled time with washed hair & clean face. Our team is excited to give you your dream look!\n\n"
+            f"— Team {salon_name}"
+        )
+        return f"https://wa.me/{digits}?text={urllib.parse.quote(text)}"
+
+    def get_balance_reminder_whatsapp_url(self, salon_name: str = "Safiya's Makeover") -> str:
+        """Returns WhatsApp click-to-chat URL with pre-filled pending payment reminder."""
+        import urllib.parse
+        digits = "".join(filter(str.isdigit, self.international_phone))
+        slip_text = f" (Slip #{self.slip_number})" if self.slip_number else ""
+        text = (
+            f"Dear {self.full_name} Ji! ✨\n\n"
+            f"Greetings from {salon_name}! This is a gentle reminder regarding your {self.booking_type or 'Bridal'} booking{slip_text}.\n\n"
+            f"💄 Package: {self.service_package or 'Bridal Makeover'}\n"
+            f"💰 Total Amount: ₹ {self.total_amount:,.2f}\n"
+            f"💵 Advance Paid: ₹ {self.advance_paid:,.2f}\n"
+            f"⚠️ Pending Balance Due: ₹ {self.balance_due:,.2f}\n\n"
+            f"Kindly settle the pending balance at your earliest convenience via Cash / UPI / Card.\n\n"
+            f"Thank you for choosing {salon_name}! 💐"
+        )
+        return f"https://wa.me/{digits}?text={urllib.parse.quote(text)}"
+
     def get_anniversary_year_count(self, target_year: int) -> int:
         """Calculate how many years of marriage on target_year."""
         if not self.wedding_date:
@@ -122,14 +199,21 @@ class Customer(db.Model):
         return {
             "id": self.id,
             "customer_code": self.customer_code,
+            "slip_number": self.slip_number,
             "full_name": self.full_name,
             "mobile_number": self.mobile_number,
+            "booking_type": self.booking_type,
             "wedding_date": self.wedding_date.isoformat() if self.wedding_date else None,
             "makeup_date": self.makeup_date.isoformat() if self.makeup_date else None,
             "service_package": self.service_package,
             "amount": self.amount,
+            "advance_amount": self.advance_amount,
+            "balance_due": self.balance_due,
+            "payment_status": self.payment_status,
+            "is_makeup_completed": self.is_makeup_completed,
             "salon_branch": self.salon_branch,
             "notes": self.notes,
+            "pre_makeup_reminder_enabled": self.pre_makeup_reminder_enabled,
             "whatsapp_consent": self.whatsapp_consent,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

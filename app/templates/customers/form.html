@@ -23,20 +23,20 @@
                 <!-- Section 1: Basic Bride Info -->
                 <div class="border-bottom pb-3 mb-3">
                     <h5 class="fw-bold text-dark fs-6 mb-3">
-                        <i class="bi bi-person-heart text-salon me-2"></i>Bride Identity &amp; Contact
+                        <i class="bi bi-person-heart text-salon me-2"></i>Client Identity &amp; Booking Details
                     </h5>
                     
                     <div class="row g-3">
-                        <div class="col-md-7">
-                            <label class="form-label fw-semibold small text-dark" for="full_name">Bride Full Name *</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="full_name">Client / Bride Full Name *</label>
                             {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else ""), id="brideFullNameInput") }}
                             {% for error in form.full_name.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
-                            <small class="text-muted" style="font-size: 0.72rem;">Official or preferred name of the bride.</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Official or preferred name of the client.</small>
                         </div>
 
-                        <div class="col-md-5">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold small text-dark" for="mobile_number">Mobile Number *</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted small">+91</span>
@@ -46,6 +46,28 @@
                                 <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                             <small class="text-muted" style="font-size: 0.72rem;">10-digit Indian mobile number for WhatsApp greetings.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="slip_number">
+                                <i class="bi bi-receipt text-salon me-1"></i>Booking Slip / Receipt No.
+                            </label>
+                            {{ form.slip_number(class="form-control" + (" is-invalid" if form.slip_number.errors else ""), id="brideSlipInput") }}
+                            {% for error in form.slip_number.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Enter manual paper receipt slip # (e.g. SLIP-1042 / BK-089).</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="booking_type">
+                                <i class="bi bi-calendar2-check text-salon me-1"></i>Booking / Service Category *
+                            </label>
+                            {{ form.booking_type(class="form-select" + (" is-invalid" if form.booking_type.errors else ""), id="brideBookingTypeInput") }}
+                            {% for error in form.booking_type.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Choose whether this is Bridal, Engagement, or Party Makeup.</small>
                         </div>
                     </div>
                 </div>
@@ -78,32 +100,41 @@
                             <label class="form-label fw-semibold small text-dark" for="makeup_date">
                                 💄 Makeup / Service Date <span class="text-muted fw-normal">(Operational Service Date)</span>
                             </label>
-                            {{ form.makeup_date(class="form-control" + (" is-invalid" if form.makeup_date.errors else "")) }}
+                            {{ form.makeup_date(class="form-control" + (" is-invalid" if form.makeup_date.errors else ""), id="brideMakeupDateInput") }}
                             {% for error in form.makeup_date.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
-                            <small class="text-muted" style="font-size: 0.72rem;">Date service was performed at salon or on-location.</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Date service will be / was performed at salon.</small>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 3: Package, Branch & Financials -->
+                <!-- Section 3: Package, Branch & Financials (Advance & Balance) -->
                 <div class="border-bottom pb-3 mb-3">
                     <h5 class="fw-bold text-dark fs-6 mb-3">
-                        <i class="bi bi-tag text-salon me-2"></i>Package &amp; Salon Location
+                        <i class="bi bi-currency-rupee text-salon me-2"></i>Package &amp; Financial Tracking (Advance &amp; Balance)
                     </h5>
 
                     <div class="row g-3">
-                        <div class="col-md-5">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold small text-dark" for="service_package">Service / Bridal Package</label>
                             {{ form.service_package(class="form-select" + (" is-invalid" if form.service_package.errors else ""), id="bridePackageInput") }}
                             {% for error in form.service_package.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Select package to automatically populate rate.</small>
                         </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold small text-dark" for="amount">Package Amount (₹ INR)</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="salon_branch">Salon Branch</label>
+                            {{ form.salon_branch(class="form-select" + (" is-invalid" if form.salon_branch.errors else "")) }}
+                            {% for error in form.salon_branch.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark" for="amount">Total Package Amount (₹)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted small">₹</span>
                                 {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else ""), id="brideAmountInput") }}
@@ -114,23 +145,51 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold small text-dark" for="salon_branch">Salon Branch</label>
-                            {{ form.salon_branch(class="form-select" + (" is-invalid" if form.salon_branch.errors else "")) }}
-                            {% for error in form.salon_branch.errors %}
+                            <label class="form-label fw-semibold small text-dark" for="advance_amount">
+                                <span class="text-success fw-bold">Advance Paid (₹)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-success-subtle text-success small">₹</span>
+                                {{ form.advance_amount(class="form-control" + (" is-invalid" if form.advance_amount.errors else ""), id="brideAdvanceInput") }}
+                            </div>
+                            {% for error in form.advance_amount.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark">
+                                <span class="text-danger fw-bold">Balance Due (Auto)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-danger-subtle text-danger small">₹</span>
+                                <input type="text" id="calculatedBalanceDisplay" class="form-control bg-light fw-bold text-danger" readonly value="0.00">
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Calculated automatically.</small>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4: Notes & Consent -->
+                <!-- Section 4: Notes, Pre-Makeup Reminder & Consent -->
                 <div class="mb-4">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small text-dark" for="notes">Special Notes &amp; Artist Preferences</label>
+                        <label class="form-label fw-semibold small text-dark" for="notes">Special Notes &amp; Preferences</label>
                         {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else "")) }}
                         {% for error in form.notes.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.pre_makeup_reminder_enabled(class="form-check-input", id="preMakeupReminderToggle") }}
+                            <label class="form-check-label fw-semibold small text-dark" for="preMakeupReminderToggle">
+                                <i class="bi bi-bell-fill text-salon me-1"></i>Send 1-Day Advance Pre-Makeup Appointment Reminder
+                            </label>
+                            <div class="text-muted small mt-1" style="font-size: 0.72rem;">
+                                Client ke makeup date se 1 din pehle automated timing, preparation guide aur pending balance ka notice send hoga. (Ise kisi bhi waqt OFF kiya ja sakta hai).
+                            </div>
+                        </div>
                     </div>
 
                     <div class="p-3 bg-light rounded-3 border">
@@ -140,7 +199,7 @@
                                 WhatsApp Communication Consent Granted
                             </label>
                             <div class="text-muted small mt-1" style="font-size: 0.72rem;">
-                                In compliance with WhatsApp policies, automated greetings will only be scheduled if consent is explicitly granted by the bride.
+                                In compliance with WhatsApp policies, automated greetings will only be scheduled if consent is explicitly granted by the client.
                             </div>
                         </div>
                     </div>
@@ -174,20 +233,44 @@
             <hr class="my-3">
 
             <div class="small">
-                <div class="d-flex justify-content-between py-1">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Slip No:</span>
+                    <strong class="text-primary font-monospace" id="previewSlip">—</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Booking Type:</span>
+                    <strong class="text-dark" id="previewBookingType">Bridal Makeup</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
                     <span class="text-muted">Package:</span>
                     <strong class="text-dark" id="previewPackage">—</strong>
                 </div>
                 <div class="d-flex justify-content-between py-1">
-                    <span class="text-muted">Total Amount:</span>
+                    <span class="text-muted">Total Package:</span>
                     <strong class="text-dark" id="previewAmount">₹ 0</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Advance Paid:</span>
+                    <strong class="text-success" id="previewAdvance">₹ 0</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Balance Due:</span>
+                    <strong class="text-danger" id="previewBalance">₹ 0</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Payment Status:</span>
+                    <span id="previewPaymentBadge" class="badge bg-secondary-subtle text-secondary">Unpaid</span>
                 </div>
                 <div class="d-flex justify-content-between py-1">
                     <span class="text-muted">Wedding Date:</span>
                     <strong class="text-salon" id="previewWeddingDate">Not Set</strong>
                 </div>
                 <div class="d-flex justify-content-between py-1">
-                    <span class="text-muted">WhatsApp:</span>
+                    <span class="text-muted">Pre-Makeup Eve:</span>
+                    <span id="previewReminderBadge" class="badge bg-success-subtle text-success">Reminder ON</span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">WhatsApp Consent:</span>
                     <span id="previewConsent" class="badge bg-success-subtle text-success">Opted-in</span>
                 </div>
             </div>
@@ -203,22 +286,41 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    const slipInput = document.getElementById("brideSlipInput");
+    const bookingTypeInput = document.getElementById("brideBookingTypeInput");
     const nameInput = document.getElementById("brideFullNameInput");
     const mobileInput = document.getElementById("brideMobileInput");
     const packageInput = document.getElementById("bridePackageInput");
     const amountInput = document.getElementById("brideAmountInput");
+    const advanceInput = document.getElementById("brideAdvanceInput");
+    const balanceDisplay = document.getElementById("calculatedBalanceDisplay");
     const weddingInput = document.getElementById("brideWeddingDateInput");
+    const reminderToggle = document.getElementById("preMakeupReminderToggle");
     const consentInput = document.getElementById("brideConsentInput");
 
+    const pSlip = document.getElementById("previewSlip");
+    const pBookingType = document.getElementById("previewBookingType");
     const pInitial = document.getElementById("previewInitial");
     const pName = document.getElementById("previewName");
     const pPhone = document.getElementById("previewPhone");
     const pPackage = document.getElementById("previewPackage");
     const pAmount = document.getElementById("previewAmount");
+    const pAdvance = document.getElementById("previewAdvance");
+    const pBalance = document.getElementById("previewBalance");
+    const pPaymentBadge = document.getElementById("previewPaymentBadge");
     const pWedding = document.getElementById("previewWeddingDate");
+    const pReminderBadge = document.getElementById("previewReminderBadge");
     const pConsent = document.getElementById("previewConsent");
 
     function updatePreview() {
+        // Slip & Type
+        const slipVal = slipInput ? slipInput.value.trim() : "";
+        pSlip.innerText = slipVal ? "#" + slipVal : "—";
+
+        const typeVal = bookingTypeInput ? bookingTypeInput.value : "Bridal Makeup";
+        pBookingType.innerText = typeVal || "Bridal Makeup";
+
+        // Name & Phone
         const nameVal = nameInput ? nameInput.value.trim() : "";
         pName.innerText = nameVal || "Bride Full Name";
         pInitial.innerText = nameVal ? nameVal.charAt(0).toUpperCase() : "B";
@@ -226,12 +328,38 @@ document.addEventListener("DOMContentLoaded", function() {
         const phoneVal = mobileInput ? mobileInput.value.trim() : "";
         pPhone.innerText = phoneVal ? "+91 " + phoneVal : "+91 ••••• •••••";
 
+        // Package
         const pkgVal = packageInput ? packageInput.value : "";
         pPackage.innerText = pkgVal || "—";
 
-        const amtVal = amountInput ? amountInput.value.trim() : "";
-        pAmount.innerText = amtVal ? "₹ " + Number(amtVal).toLocaleString('en-IN') : "₹ 0";
+        // Financials: Total, Advance, Balance
+        const total = parseFloat(amountInput ? amountInput.value : 0) || 0;
+        const advance = parseFloat(advanceInput ? advanceInput.value : 0) || 0;
+        const balance = Math.max(0, total - advance);
 
+        if (balanceDisplay) {
+            balanceDisplay.value = balance.toFixed(2);
+        }
+
+        pAmount.innerText = "₹ " + total.toLocaleString('en-IN');
+        pAdvance.innerText = "₹ " + advance.toLocaleString('en-IN');
+        pBalance.innerText = "₹ " + balance.toLocaleString('en-IN');
+
+        if (total === 0) {
+            pPaymentBadge.className = "badge bg-secondary-subtle text-secondary";
+            pPaymentBadge.innerText = "Not Set";
+        } else if (advance >= total) {
+            pPaymentBadge.className = "badge bg-success-subtle text-success";
+            pPaymentBadge.innerText = "Fully Paid";
+        } else if (advance > 0) {
+            pPaymentBadge.className = "badge bg-warning-subtle text-warning";
+            pPaymentBadge.innerText = "Partial Due";
+        } else {
+            pPaymentBadge.className = "badge bg-danger-subtle text-danger";
+            pPaymentBadge.innerText = "Unpaid";
+        }
+
+        // Wedding Date
         const wedVal = weddingInput ? weddingInput.value : "";
         if (wedVal) {
             const parts = wedVal.split("-");
@@ -242,6 +370,17 @@ document.addEventListener("DOMContentLoaded", function() {
             pWedding.className = "text-warning fw-semibold";
         }
 
+        // Reminder Toggle
+        const reminderOn = reminderToggle ? reminderToggle.checked : true;
+        if (reminderOn) {
+            pReminderBadge.className = "badge bg-success-subtle text-success";
+            pReminderBadge.innerText = "Reminder ON";
+        } else {
+            pReminderBadge.className = "badge bg-secondary-subtle text-secondary";
+            pReminderBadge.innerText = "Reminder OFF";
+        }
+
+        // WhatsApp Consent
         const consent = consentInput ? consentInput.checked : true;
         if (consent) {
             pConsent.className = "badge bg-success-subtle text-success";
@@ -284,7 +423,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    [nameInput, mobileInput, packageInput, amountInput, weddingInput, consentInput].forEach(el => {
+    [slipInput, bookingTypeInput, nameInput, mobileInput, packageInput, amountInput, advanceInput, weddingInput, reminderToggle, consentInput].forEach(el => {
         if (el) {
             el.addEventListener("input", updatePreview);
             el.addEventListener("change", updatePreview);
