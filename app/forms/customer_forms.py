@@ -14,6 +14,33 @@ from wtforms.validators import DataRequired, Optional, Length, ValidationError
 from app.models.customer import Customer
 
 
+BRIDAL_PACKAGES = [
+    # Bridal H.D Makeup
+    ("Bridal HD - Kryolan", "Bridal H.D - Kryolan (₹8,000)", 8000),
+    ("Bridal HD - Forever 52", "Bridal H.D - Forever 52 (₹9,500)", 9500),
+    ("Bridal HD - Charmacy Milano", "Bridal H.D - Charmacy Milano (₹10,000)", 10000),
+    ("Bridal HD - P.A.C", "Bridal H.D - P.A.C (₹11,000)", 11000),
+    ("Bridal HD - M.A.C", "Bridal H.D - M.A.C (₹12,000)", 12000),
+    ("Bridal HD - Huda Beauty", "Bridal H.D - Huda Beauty (₹13,500)", 13500),
+    ("Bridal HD - Makeup Studio", "Bridal H.D - Makeup Studio (₹15,000)", 15000),
+    ("Bridal HD - Nars", "Bridal H.D - Nars (₹17,500)", 17500),
+    ("Bridal HD - Bobby Brown", "Bridal H.D - Bobby Brown (₹20,000)", 20000),
+
+    # Bridal Airbrush Makeup
+    ("Bridal Airbrush - Kryolan", "Bridal Airbrush - Kryolan (₹10,000)", 10000),
+    ("Bridal Airbrush - Forever 52", "Bridal Airbrush - Forever 52 (₹11,000)", 11000),
+    ("Bridal Airbrush - Charmacy Milano", "Bridal Airbrush - Charmacy Milano (₹12,000)", 12000),
+    ("Bridal Airbrush - P.A.C", "Bridal Airbrush - P.A.C (₹12,000)", 12000),
+    ("Bridal Airbrush - M.A.C", "Bridal Airbrush - M.A.C (₹13,500)", 13500),
+    ("Bridal Airbrush - Huda Beauty", "Bridal Airbrush - Huda Beauty (₹15,000)", 15000),
+    ("Bridal Airbrush - Makeup Studio", "Bridal Airbrush - Makeup Studio (₹16,500)", 16500),
+    ("Bridal Airbrush - Nars", "Bridal Airbrush - Nars (₹20,000)", 20000),
+    ("Bridal Airbrush - Bobby Brown", "Bridal Airbrush - Bobby Brown (₹25,000)", 25000),
+]
+
+PACKAGE_PRICE_MAP = {pkg[0]: pkg[2] for pkg in BRIDAL_PACKAGES}
+
+
 def validate_indian_mobile(form, field):
     """Validates 10-digit Indian mobile number."""
     val = (field.data or "").strip()
@@ -65,26 +92,18 @@ class CustomerForm(FlaskForm):
 
     service_package = SelectField(
         "Service / Package",
-        choices=[
-            SelectChoice("", "-- Select Package --"),
-            SelectChoice("Signature Bridal HD", "Signature Bridal HD"),
-            SelectChoice("Airbrush Royal Bridal", "Airbrush Royal Bridal"),
-            SelectChoice("Classic Bridal Makeover", "Classic Bridal Makeover"),
-            SelectChoice("Nikah / Reception Glam", "Nikah / Reception Glam"),
-            SelectChoice("Pre-Bridal Glow Care", "Pre-Bridal Glow Care"),
-            SelectChoice("Engagement / Sangeet Look", "Engagement / Sangeet Look"),
-            SelectChoice("Party Makeup", "Party Makeup"),
-            SelectChoice("Custom Bridal Package", "Custom Bridal Package"),
+        choices=[SelectChoice("", "-- Select Bridal Package --")] + [
+            SelectChoice(pkg[0], pkg[1]) for pkg in BRIDAL_PACKAGES
         ],
         validators=[Optional()],
-        render_kw={"class": "form-select"},
+        render_kw={"class": "form-select", "id": "bridePackageInput"},
     )
 
     amount = DecimalField(
         "Total Amount (₹ INR)",
         validators=[Optional()],
         places=2,
-        render_kw={"placeholder": "e.g. 25000", "class": "form-control", "step": "500"},
+        render_kw={"placeholder": "e.g. 15000", "class": "form-control", "step": "500"},
     )
 
     salon_branch = SelectField(

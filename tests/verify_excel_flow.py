@@ -28,11 +28,11 @@ def test_excel_roundtrip():
     # Header row
     ws.append(["Bride Name", "Mobile Number", "Wedding Date", "Makeup Date", "Package", "Amount", "Branch", "Consent"])
     # Sample records
-    ws.append(["Rukhsar Bano", "+91 98765 11122", "14/02/2021", "14/02/2021", "Signature Bridal HD", 35000, "Main Studio", "Yes"])
-    ws.append(["Heena Kausar", "09876533344", "20/11/2022", "19/11/2022", "Airbrush Royal Bridal", 40000, "City Centre Branch", "Y"])
-    ws.append(["Nida Shaikh", "9876555566", "", "05/10/2023", "Classic Bridal Makeover", 25000, "Bridal Lounge", "No"]) # Missing wedding date
-    ws.append(["Duplicate Test", "9876511122", "14/02/2021", "14/02/2021", "Signature Bridal HD", 35000, "Main Studio", "Yes"]) # Duplicate phone
-    ws.append(["", "9876577788", "10/01/2023", "10/01/2023", "Package", 20000, "Main Studio", "Yes"]) # Missing name error
+    ws.append(["Rukhsar Bano", "+91 98765 11122", "14/02/2021", "14/02/2021", "Bridal HD - Bobby Brown", 20000, "Main Studio", "Yes"])
+    ws.append(["Heena Kausar", "09876533344", "20/11/2022", "19/11/2022", "Bridal Airbrush - M.A.C", 13500, "City Centre Branch", "Y"])
+    ws.append(["Nida Shaikh", "9876555566", "", "05/10/2023", "Bridal HD - Charmacy Milano", 10000, "Bridal Lounge", "No"]) # Missing wedding date
+    ws.append(["Duplicate Test", "9876511122", "14/02/2021", "14/02/2021", "Bridal HD - Bobby Brown", 20000, "Main Studio", "Yes"]) # Duplicate phone
+    ws.append(["", "9876577788", "10/01/2023", "10/01/2023", "Bridal Airbrush - Kryolan", 10000, "Main Studio", "Yes"]) # Missing name error
 
     stream = io.BytesIO()
     wb.save(stream)

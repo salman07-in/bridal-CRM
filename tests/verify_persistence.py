@@ -34,8 +34,8 @@ def test_sqlite_persistence():
             mobile_number=test_mobile,
             wedding_date=date(2022, 12, 10),
             makeup_date=date(2022, 12, 10),
-            service_package="Signature Bridal HD",
-            amount=45000.0,
+            service_package="Bridal Airbrush - Bobby Brown",
+            amount=25000.0,
             salon_branch="Main Studio",
             whatsapp_consent=True,
         )
@@ -55,7 +55,7 @@ def test_sqlite_persistence():
         assert persisted.customer_code == cust_code
         assert persisted.full_name == "Persistence Test Bride"
         assert persisted.wedding_date == date(2022, 12, 10)
-        assert persisted.amount == 45000.0
+        assert persisted.amount == 25000.0
         assert persisted.whatsapp_consent is True
 
         # Verify WAL mode

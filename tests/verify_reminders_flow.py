@@ -32,7 +32,7 @@ def test_anniversary_reminders():
             mobile_number="9876588801",
             wedding_date=today.replace(year=today.year - 3),
             whatsapp_consent=True,
-            service_package="Signature Bridal HD",
+            service_package="Bridal HD - Nars",
         )
         # Bride 2: Today is 1st anniversary, consent = False
         b2 = Customer(
@@ -41,7 +41,7 @@ def test_anniversary_reminders():
             mobile_number="9876588802",
             wedding_date=today.replace(year=today.year - 1),
             whatsapp_consent=False,
-            service_package="Classic Bridal Makeover",
+            service_package="Bridal HD - Kryolan",
         )
         # Bride 3: Anniversary in 5 days
         b3 = Customer(

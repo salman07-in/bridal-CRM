@@ -12,8 +12,8 @@ def test_create_customer(auth_client, app):
             "mobile_number": "9876512345",
             "wedding_date": "2022-11-20",
             "makeup_date": "2022-11-20",
-            "service_package": "Signature Bridal HD",
-            "amount": "30000",
+            "service_package": "Bridal HD - M.A.C",
+            "amount": "12000",
             "salon_branch": "Main Studio",
             "notes": "Skin sensitive to heavy fragrance",
             "whatsapp_consent": "y",
@@ -27,7 +27,7 @@ def test_create_customer(auth_client, app):
         assert cust is not None
         assert cust.full_name == "Fatima Begum"
         assert cust.wedding_date == date(2022, 11, 20)
-        assert cust.amount == 30000.0
+        assert cust.amount == 12000.0
         assert cust.whatsapp_consent is True
 
         # Check audit log
@@ -75,7 +75,7 @@ def test_edit_customer(auth_client, app):
         data={
             "full_name": "Updated Name",
             "mobile_number": "9876500001",
-            "service_package": "Airbrush Royal Bridal",
+            "service_package": "Bridal Airbrush - Huda Beauty",
             "wedding_date": "2023-01-15",
             "whatsapp_consent": "y",
         },

@@ -103,10 +103,10 @@ def init_database(seed_sample_data: bool = False):
                     "mobile_number": "9876500001",
                     "wedding_date": today.replace(year=today.year - 2), # 2nd anniversary today!
                     "makeup_date": today.replace(year=today.year - 2),
-                    "package": "Signature Bridal HD",
-                    "amount": 35000,
+                    "package": "Bridal HD - M.A.C",
+                    "amount": 12000,
                     "branch": "Main Studio",
-                    "notes": "Classic royal red lehenga look, airbrush finish",
+                    "notes": "Classic royal red lehenga look with M.A.C finish",
                     "consent": True,
                 },
                 {
@@ -114,10 +114,10 @@ def init_database(seed_sample_data: bool = False):
                     "mobile_number": "9876500002",
                     "wedding_date": today.replace(year=today.year - 1), # 1st anniversary today!
                     "makeup_date": today.replace(year=today.year - 1),
-                    "package": "Airbrush Royal Bridal",
-                    "amount": 42000,
+                    "package": "Bridal Airbrush - Huda Beauty",
+                    "amount": 15000,
                     "branch": "City Centre Branch",
-                    "notes": "Reception glam look, requested subtle eye makeup",
+                    "notes": "Reception glam look with Huda Beauty airbrush",
                     "consent": True,
                 },
                 {
@@ -125,8 +125,8 @@ def init_database(seed_sample_data: bool = False):
                     "mobile_number": "9876500003",
                     "wedding_date": (today + timedelta(days=3)).replace(year=today.year - 3), # In 3 days
                     "makeup_date": (today + timedelta(days=3)).replace(year=today.year - 3),
-                    "package": "Classic Bridal Makeover",
-                    "amount": 28000,
+                    "package": "Bridal HD - Forever 52",
+                    "amount": 9500,
                     "branch": "Bridal Lounge",
                     "notes": "Pastel pink look with pearl jewelry setting",
                     "consent": True,
@@ -136,10 +136,10 @@ def init_database(seed_sample_data: bool = False):
                     "mobile_number": "9876500004",
                     "wedding_date": None, # Missing wedding date for review!
                     "makeup_date": today - timedelta(days=120),
-                    "package": "Nikah / Reception Glam",
-                    "amount": 22000,
+                    "package": "Bridal HD - Bobby Brown",
+                    "amount": 20000,
                     "branch": "Main Studio",
-                    "notes": "Handwritten diary record: need to call bride to confirm wedding date",
+                    "notes": "Handwritten diary record: call bride to confirm wedding date",
                     "consent": False,
                 },
                 {
@@ -147,8 +147,8 @@ def init_database(seed_sample_data: bool = False):
                     "mobile_number": "9876500005",
                     "wedding_date": date(2020, 2, 29), # Leap year bride!
                     "makeup_date": date(2020, 2, 28),
-                    "package": "Signature Bridal HD",
-                    "amount": 30000,
+                    "package": "Bridal Airbrush - Nars",
+                    "amount": 20000,
                     "branch": "Main Studio",
                     "notes": "Leap year wedding! Celebrates on Feb 28 in non-leap years.",
                     "consent": True,

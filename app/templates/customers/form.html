@@ -252,6 +252,38 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    const packagePrices = {
+        "Bridal HD - Kryolan": 8000,
+        "Bridal HD - Forever 52": 9500,
+        "Bridal HD - Charmacy Milano": 10000,
+        "Bridal HD - P.A.C": 11000,
+        "Bridal HD - M.A.C": 12000,
+        "Bridal HD - Huda Beauty": 13500,
+        "Bridal HD - Makeup Studio": 15000,
+        "Bridal HD - Nars": 17500,
+        "Bridal HD - Bobby Brown": 20000,
+
+        "Bridal Airbrush - Kryolan": 10000,
+        "Bridal Airbrush - Forever 52": 11000,
+        "Bridal Airbrush - Charmacy Milano": 12000,
+        "Bridal Airbrush - P.A.C": 12000,
+        "Bridal Airbrush - M.A.C": 13500,
+        "Bridal Airbrush - Huda Beauty": 15000,
+        "Bridal Airbrush - Makeup Studio": 16500,
+        "Bridal Airbrush - Nars": 20000,
+        "Bridal Airbrush - Bobby Brown": 25000
+    };
+
+    if (packageInput && amountInput) {
+        packageInput.addEventListener("change", function() {
+            const selected = this.value;
+            if (packagePrices[selected]) {
+                amountInput.value = packagePrices[selected];
+                updatePreview();
+            }
+        });
+    }
+
     [nameInput, mobileInput, packageInput, amountInput, weddingInput, consentInput].forEach(el => {
         if (el) {
             el.addEventListener("input", updatePreview);
