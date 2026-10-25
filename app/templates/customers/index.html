@@ -28,6 +28,12 @@
             </a>
         </li>
         <li class="nav-item">
+            <a class="nav-link py-2 px-3 fw-semibold {% if tab == 'today' %}active text-white bg-danger{% endif %}" href="{{ url_for('customers.index', tab='today', q=search, branch=branch, booking_type=booking_type) }}">
+                <i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Today's Makeups (Aaj)
+                <span class="badge {% if tab == 'today' %}bg-white text-danger{% else %}bg-danger text-white{% endif %} ms-1">{{ total_today }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link py-2 px-3 fw-semibold {% if tab == 'upcoming' %}active{% endif %}" href="{{ url_for('customers.index', tab='upcoming', q=search, branch=branch, booking_type=booking_type) }}">
                 <i class="bi bi-calendar-event me-1"></i> Upcoming Bookings
                 <span class="badge bg-stat-pink text-salon ms-1">{{ total_upcoming }}</span>
@@ -47,6 +53,18 @@
         </li>
     </ul>
 </div>
+
+{% if tab == 'today' %}
+<div class="alert alert-danger border-danger-subtle d-flex justify-content-between align-items-center py-2 px-3 mb-3" style="background-color: #FFF1F2;">
+    <div>
+        <i class="bi bi-stars text-danger me-2 fs-5"></i>
+        <strong>Today's Makeover Appointments (Aaj Ke Makeups):</strong> Aaj studio me kul <strong>{{ total_today }}</strong> client(s) ke makeup scheduled hain.
+    </div>
+    <div class="badge bg-danger text-white px-3 py-2 fs-6">
+        Today's Schedule: {{ total_today }} Client(s)
+    </div>
+</div>
+{% endif %}
 
 {% if tab == 'pending_balance' %}
 <div class="alert alert-warning border-warning-subtle d-flex justify-content-between align-items-center py-2 px-3 mb-3">
@@ -191,7 +209,9 @@
                         <td>
                             {% if c.makeup_date %}
                                 <div><strong class="text-dark">{{ c.makeup_date | date_in }}</strong></div>
-                                {% if c.makeup_date > current_date %}
+                                {% if c.makeup_date == current_date %}
+                                    <small class="badge bg-danger text-white border" style="font-size: 0.68rem;"><i class="bi bi-lightning-fill me-1"></i>TODAY (Aaj)</small>
+                                {% elif c.makeup_date > current_date %}
                                     <small class="badge bg-stat-pink text-salon border" style="font-size: 0.68rem;">Upcoming</small>
                                 {% else %}
                                     <small class="badge bg-light text-muted border" style="font-size: 0.68rem;">Completed</small>

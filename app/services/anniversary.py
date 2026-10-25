@@ -227,6 +227,26 @@ class AnniversaryService:
         return sorted(results, key=lambda x: (x["day"], x["customer"].full_name))
 
     @classmethod
+    def get_todays_makeup_appointments(cls, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
+        """Get all clients who have their makeup appointment today."""
+        today = reference_date or cls.get_kolkata_today()
+        customers = Customer.query.filter(
+            or_(Customer.makeup_date == today, and_(Customer.makeup_date.is_(None), Customer.wedding_date == today))
+        ).order_by(Customer.full_name).all()
+
+        results = []
+        for c in customers:
+            results.append({
+                "customer": c,
+                "makeup_date": c.makeup_date or c.wedding_date,
+                "days_away": 0,
+                "booking_type": c.booking_type or "Bridal Makeup",
+                "package": c.service_package,
+                "balance_due": c.balance_due,
+            })
+        return results
+
+    @classmethod
     def get_tomorrows_makeup_appointments(cls, reference_date: Optional[date] = None) -> List[Dict[str, Any]]:
         """Get all clients who have their makeup appointment tomorrow (1-day prior)."""
         today = reference_date or cls.get_kolkata_today()
@@ -288,6 +308,7 @@ class AnniversaryService:
         whatsapp_consented_count = Customer.query.filter_by(whatsapp_consent=True).count()
 
         # Makeup appointments
+        todays_makeups = cls.get_todays_makeup_appointments(today)
         tomorrows_makeups = cls.get_tomorrows_makeup_appointments(today)
         upcoming_makeups = cls.get_upcoming_makeup_appointments(15, today)
 
@@ -317,6 +338,8 @@ class AnniversaryService:
             "todays_anniversaries": todays_anniversaries,
             "tomorrows_anniversaries": tomorrows_anniversaries,
             "upcoming_anniversaries": upcoming_7days,
+            "todays_makeups": todays_makeups,
+            "todays_makeup_count": len(todays_makeups),
             "tomorrows_makeups": tomorrows_makeups,
             "tomorrows_makeup_count": len(tomorrows_makeups),
             "upcoming_makeups": upcoming_makeups,

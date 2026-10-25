@@ -46,8 +46,15 @@ def index():
     if booking_type:
         query = query.filter(Customer.booking_type == booking_type)
 
-    # Tab filter: all, upcoming, completed, pending_balance
-    if tab == "upcoming":
+    # Tab filter: all, today, upcoming, completed, pending_balance
+    if tab == "today":
+        query = query.filter(
+            or_(
+                Customer.makeup_date == today,
+                and_(Customer.makeup_date.is_(None), Customer.wedding_date == today),
+            )
+        )
+    elif tab == "upcoming":
         query = query.filter(
             or_(
                 Customer.makeup_date >= today,
@@ -80,7 +87,7 @@ def index():
         query = query.filter(Customer.whatsapp_consent == False)
 
     # Ordering
-    if tab == "upcoming":
+    if tab in ("today", "upcoming"):
         query = query.order_by(Customer.makeup_date.asc().nullslast(), Customer.wedding_date.asc().nullslast())
     else:
         query = query.order_by(Customer.created_at.desc())
@@ -90,6 +97,9 @@ def index():
 
     # Compute quick stats for tabs
     total_all = Customer.query.count()
+    total_today = Customer.query.filter(
+        or_(Customer.makeup_date == today, and_(Customer.makeup_date.is_(None), Customer.wedding_date == today))
+    ).count()
     total_upcoming = Customer.query.filter(
         or_(Customer.makeup_date >= today, and_(Customer.makeup_date.is_(None), Customer.wedding_date >= today))
     ).count()
@@ -121,6 +131,7 @@ def index():
         filter_consent=filter_consent,
         branches=branches,
         total_all=total_all,
+        total_today=total_today,
         total_upcoming=total_upcoming,
         total_completed=total_completed,
         total_pending_balance=total_pending_balance,

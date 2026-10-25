@@ -258,3 +258,42 @@ def test_engagement_and_party_package_submission(auth_client, app):
         assert c_pty.balance_due == 4000.0
         assert c_pty.payment_status == "Partial"
 
+
+def test_todays_makeup_service_and_tab(auth_client, app):
+    """Test AnniversaryService.get_todays_makeup_appointments() and /customers/?tab=today."""
+    today = date.today()
+
+    with app.app_context():
+        c_today = Customer(
+            customer_code="SAF-TODAY-01",
+            full_name="Fatima Today",
+            mobile_number="9800000031",
+            slip_number="SLIP-TODAY-1",
+            makeup_date=today,
+            booking_type="Bridal Makeup",
+            service_package="Bridal HD - Bobby Brown",
+            amount=20000.0,
+            advance_amount=10000.0,
+        )
+        db.session.add(c_today)
+        db.session.commit()
+
+        # Test AnniversaryService
+        todays = AnniversaryService.get_todays_makeup_appointments()
+        codes = [item["customer"].customer_code for item in todays]
+        assert "SAF-TODAY-01" in codes
+
+        # Test Dashboard summary
+        summary = AnniversaryService.get_dashboard_summary()
+        assert summary["todays_makeup_count"] >= 1
+        summary_codes = [item["customer"].customer_code for item in summary["todays_makeups"]]
+        assert "SAF-TODAY-01" in summary_codes
+
+    # Test Customer Register tab=today
+    res_today = auth_client.get("/customers/?tab=today")
+    assert res_today.status_code == 200
+    assert b"Fatima Today" in res_today.data
+    assert b"SLIP-TODAY-1" in res_today.data
+    assert b"Today's Makeover Appointments" in res_today.data
+
+
