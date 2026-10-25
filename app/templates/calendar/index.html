@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Anniversary Calendar — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Bridal Anniversary Calendar</h2>
+        <p class="text-muted small mb-0">Browse monthly wedding celebrations and upcoming milestones.</p>
+    </div>
+
+    <!-- Calendar Month Navigation Controls -->
+    <div class="d-flex align-items-center gap-2">
+        <div class="btn-group">
+            <a href="{{ url_for('calendar.index', year=prev_year, month=prev_month) }}" class="btn btn-outline-secondary btn-sm" title="Previous Month">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <span class="btn btn-light border btn-sm fw-bold px-3">
+                {{ month_name }} {{ year }}
+            </span>
+            <a href="{{ url_for('calendar.index', year=next_year, month=next_month) }}" class="btn btn-outline-secondary btn-sm" title="Next Month">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        <a href="{{ url_for('calendar.index', year=today.year, month=today.month) }}" class="btn btn-salon-outline btn-sm">
+            Today
+        </a>
+    </div>
+</div>
+
+<!-- Calendar Legend & Stats Banner -->
+<div class="d-flex justify-content-between align-items-center bg-white p-3 rounded-3 border mb-3 small">
+    <div class="d-flex align-items-center gap-3">
+        <span><i class="bi bi-cake2-fill text-salon me-1"></i> Total <strong>{{ total_month_anniversaries }}</strong> anniversaries in {{ month_name }} {{ year }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="d-flex align-items-center"><span class="d-inline-block rounded-circle bg-stat-pink p-1 me-1" style="width: 12px; height: 12px;"></span> Wedding Anniversary</span>
+        <span class="d-flex align-items-center"><span class="d-inline-block rounded-circle bg-salon-primary p-1 me-1" style="width: 12px; height: 12px; background-color: var(--salon-primary);"></span> Today's Date</span>
+    </div>
+</div>
+
+<!-- Calendar Matrix -->
+<div class="cal-grid shadow-sm">
+    <!-- Day Headers: Sun to Sat -->
+    <div class="cal-header-cell">Sun</div>
+    <div class="cal-header-cell">Mon</div>
+    <div class="cal-header-cell">Tue</div>
+    <div class="cal-header-cell">Wed</div>
+    <div class="cal-header-cell">Thu</div>
+    <div class="cal-header-cell">Fri</div>
+    <div class="cal-header-cell">Sat</div>
+
+    <!-- Weeks and Days -->
+    {% for week in month_days %}
+        {% for day in week %}
+            {% if day == 0 %}
+                <!-- Blank cell from other month -->
+                <div class="cal-day-cell cal-other-month"></div>
+            {% else %}
+                {% set is_current_day = (day == today.day and month == today.month and year == today.year) %}
+                <div class="cal-day-cell {% if is_current_day %}cal-today{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="cal-day-number small fw-semibold text-muted">{{ day }}</span>
+                        {% if day in events_by_day %}
+                            <span class="badge badge-pink rounded-pill" style="font-size: 0.65rem;">
+                                {{ events_by_day[day] | length }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Events for this day -->
+                    {% if day in events_by_day %}
+                        {% for ev in events_by_day[day] %}
+                            {% set c = ev.customer %}
+                            <a href="{{ url_for('customers.detail', id=c.id) }}" 
+                               class="cal-event-pill" 
+                               data-bs-toggle="tooltip" 
+                               title="{{ c.full_name }} — {{ ev.years }} Year(s) Anniversary (Phone: {{ c.mobile_number }})">
+                                💍 {{ c.full_name }} ({{ ev.years }}y)
+                            </a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</div>
+{% endblock %}

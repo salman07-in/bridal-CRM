@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Import Inspection Report — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Import Inspection Report</h2>
+        <p class="text-muted small mb-0">File: <code>{{ filename }}</code> &bull; Total rows inspected: <strong>{{ report.total_rows }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('import_export.import_wizard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Upload Different File
+        </a>
+        {% if report.valid_count > 0 %}
+        <form method="POST" action="{{ url_for('import_export.commit_import') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-salon-primary btn-sm px-3 fw-semibold">
+                <i class="bi bi-check2-circle me-1"></i> Confirm &amp; Import {{ report.valid_count }} Valid Record(s)
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Validation Metrics Summary -->
+<div class="row g-3 mb-4">
+    <!-- Valid Records -->
+    <div class="col-md-4">
+        <div class="card card-salon p-3 card-stat" style="border-left-color: #10B981;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Ready for Import</div>
+                    <h3 class="fw-bold mb-0 text-success">{{ report.valid_count }}</h3>
+                    <small class="text-muted">Passes all validation rules</small>
+                </div>
+                <div class="stat-icon bg-stat-green"><i class="bi bi-check2-circle"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Records -->
+    <div class="col-md-4">
+        <div class="card card-salon p-3 card-stat" style="border-left-color: #F59E0B;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Duplicates Skipped</div>
+                    <h3 class="fw-bold mb-0 text-warning-emphasis">{{ report.duplicate_count }}</h3>
+                    <small class="text-muted">Already registered phone numbers</small>
+                </div>
+                <div class="stat-icon bg-stat-amber"><i class="bi bi-copy"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invalid Error Records -->
+    <div class="col-md-4">
+        <div class="card card-salon p-3 card-stat" style="border-left-color: #EF4444;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Invalid Rows</div>
+                    <h3 class="fw-bold mb-0 text-danger">{{ report.invalid_count }}</h3>
+                    <small class="text-muted">Missing name or bad formats</small>
+                </div>
+                <div class="stat-icon bg-stat-red"><i class="bi bi-x-octagon"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Preview Details -->
+<div class="card card-salon">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs border-0 px-3 pt-2" id="previewTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" id="valid-tab" data-bs-toggle="tab" data-bs-target="#valid-panel">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> Valid Records ({{ report.valid_count }})
+                </button>
+            </li>
+            {% if report.duplicate_count > 0 %}
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" id="duplicate-tab" data-bs-toggle="tab" data-bs-target="#duplicate-panel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Duplicates ({{ report.duplicate_count }})
+                </button>
+            </li>
+            {% endif %}
+            {% if report.invalid_count > 0 %}
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" id="invalid-tab" data-bs-toggle="tab" data-bs-target="#invalid-panel">
+                    <i class="bi bi-x-circle-fill text-danger me-1"></i> Errors ({{ report.invalid_count }})
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="tab-content" id="previewTabContent">
+            <!-- Valid Records Panel -->
+            <div class="tab-pane fade show active" id="valid-panel">
+                {% if report.valid_records %}
+                <div class="table-responsive">
+                    <table class="table table-salon align-middle">
+                        <thead>
+                            <tr>
+                                <th>#Row</th>
+                                <th>Bride Full Name</th>
+                                <th>Mobile</th>
+                                <th>Wedding Date</th>
+                                <th>Makeup Date</th>
+                                <th>Package</th>
+                                <th>Amount</th>
+                                <th>Consent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in report.valid_records[:50] %}
+                            <tr>
+                                <td><span class="badge bg-light text-muted border">{{ r.row_number }}</span></td>
+                                <td><strong>{{ r.full_name }}</strong></td>
+                                <td class="font-monospace">{{ r.mobile_number }}</td>
+                                <td>
+                                    {% if r.wedding_date %}
+                                    <span class="badge bg-stat-pink text-salon border">{{ r.wedding_date.strftime("%d/%m/%Y") }}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">Missing</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ r.makeup_date.strftime("%d/%m/%Y") if r.makeup_date else '-' }}</td>
+                                <td>{{ r.service_package or '-' }}</td>
+                                <td>{{ r.amount if r.amount is not none else '-' }}</td>
+                                <td>
+                                    {% if r.whatsapp_consent %}
+                                    <span class="badge bg-success-subtle text-success">Yes</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if report.valid_count > 50 %}
+                <div class="p-3 text-center text-muted small border-top">
+                    Showing first 50 of {{ report.valid_count }} records. All {{ report.valid_count }} will be saved upon confirmation.
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5 text-muted">No valid rows ready to import.</div>
+                {% endif %}
+            </div>
+
+            <!-- Duplicates Panel -->
+            {% if report.duplicate_count > 0 %}
+            <div class="tab-pane fade" id="duplicate-panel">
+                <div class="table-responsive">
+                    <table class="table table-salon align-middle">
+                        <thead>
+                            <tr>
+                                <th>#Row</th>
+                                <th>Bride Name</th>
+                                <th>Mobile</th>
+                                <th>Conflict Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in report.duplicate_records %}
+                            <tr>
+                                <td><span class="badge bg-light text-muted border">{{ d.row_number }}</span></td>
+                                <td><strong>{{ d.full_name }}</strong></td>
+                                <td class="font-monospace text-warning-emphasis fw-semibold">{{ d.mobile_number }}</td>
+                                <td>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border">
+                                        {{ d.reason }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Invalid Records Panel -->
+            {% if report.invalid_count > 0 %}
+            <div class="tab-pane fade" id="invalid-panel">
+                <div class="table-responsive">
+                    <table class="table table-salon align-middle">
+                        <thead>
+                            <tr>
+                                <th>#Row</th>
+                                <th>Validation Errors</th>
+                                <th>Raw Row Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in report.invalid_records %}
+                            <tr>
+                                <td><span class="badge bg-danger-subtle text-danger border">{{ inv.row_number }}</span></td>
+                                <td>
+                                    <ul class="mb-0 ps-3 text-danger small">
+                                        {% for err in inv.errors %}
+                                        <li>{{ err }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <code class="small text-muted">{{ inv.raw_data }}</code>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

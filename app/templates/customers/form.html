@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1">{{ title }}</h2>
+        <p class="text-muted small mb-0">Record bridal client specifications, distinct event dates, and communication consent.</p>
+    </div>
+    <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Register
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Form Column -->
+    <div class="col-lg-8">
+        <div class="card card-salon p-4">
+            <form method="POST" id="customerForm" novalidate>
+                {{ form.hidden_tag() }}
+
+                <!-- Section 1: Basic Bride Info -->
+                <div class="border-bottom pb-3 mb-3">
+                    <h5 class="fw-bold text-dark fs-6 mb-3">
+                        <i class="bi bi-person-heart text-salon me-2"></i>Bride Identity &amp; Contact
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small text-dark" for="full_name">Bride Full Name *</label>
+                            {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else ""), id="brideFullNameInput") }}
+                            {% for error in form.full_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Official or preferred name of the bride.</small>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small text-dark" for="mobile_number">Mobile Number *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted small">+91</span>
+                                {{ form.mobile_number(class="form-control" + (" is-invalid" if form.mobile_number.errors else ""), id="brideMobileInput") }}
+                            </div>
+                            {% for error in form.mobile_number.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">10-digit Indian mobile number for WhatsApp greetings.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Strict Event Dates (Separate Wedding Date & Makeup Date) -->
+                <div class="border-bottom pb-3 mb-3" style="background-color: #FFFDFE; margin: 0 -1.5rem; padding: 1rem 1.5rem;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h5 class="fw-bold text-dark fs-6 mb-0">
+                            <i class="bi bi-calendar-event text-salon me-2"></i>Event Dates (Strict Separation)
+                        </h5>
+                        <span class="badge badge-pink" style="font-size: 0.7rem;">Anniversary Rules</span>
+                    </div>
+                    <p class="text-muted small mb-3" style="font-size: 0.78rem;">
+                        <strong>Important:</strong> Wedding Date is the <em>sole trigger</em> for future wedding anniversary reminders. Makeup Date is strictly when the service is conducted. Unknown wedding dates should remain blank.
+                    </p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="wedding_date">
+                                💍 Wedding Date <span class="text-muted fw-normal">(Sole Anniversary Trigger)</span>
+                            </label>
+                            {{ form.wedding_date(class="form-control" + (" is-invalid" if form.wedding_date.errors else ""), id="brideWeddingDateInput") }}
+                            {% for error in form.wedding_date.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Leave empty if unknown (never guess or infer).</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark" for="makeup_date">
+                                💄 Makeup / Service Date <span class="text-muted fw-normal">(Operational Service Date)</span>
+                            </label>
+                            {{ form.makeup_date(class="form-control" + (" is-invalid" if form.makeup_date.errors else "")) }}
+                            {% for error in form.makeup_date.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Date service was performed at salon or on-location.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Package, Branch & Financials -->
+                <div class="border-bottom pb-3 mb-3">
+                    <h5 class="fw-bold text-dark fs-6 mb-3">
+                        <i class="bi bi-tag text-salon me-2"></i>Package &amp; Salon Location
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small text-dark" for="service_package">Service / Bridal Package</label>
+                            {{ form.service_package(class="form-select" + (" is-invalid" if form.service_package.errors else ""), id="bridePackageInput") }}
+                            {% for error in form.service_package.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small text-dark" for="amount">Package Amount (₹ INR)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted small">₹</span>
+                                {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else ""), id="brideAmountInput") }}
+                            </div>
+                            {% for error in form.amount.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark" for="salon_branch">Salon Branch</label>
+                            {{ form.salon_branch(class="form-select" + (" is-invalid" if form.salon_branch.errors else "")) }}
+                            {% for error in form.salon_branch.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Notes & Consent -->
+                <div class="mb-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark" for="notes">Special Notes &amp; Artist Preferences</label>
+                        {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else "")) }}
+                        {% for error in form.notes.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="form-check">
+                            {{ form.whatsapp_consent(class="form-check-input", id="brideConsentInput") }}
+                            <label class="form-check-label fw-semibold small text-dark" for="brideConsentInput">
+                                WhatsApp Communication Consent Granted
+                            </label>
+                            <div class="text-muted small mt-1" style="font-size: 0.72rem;">
+                                In compliance with WhatsApp policies, automated greetings will only be scheduled if consent is explicitly granted by the bride.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-end gap-2 pt-2">
+                    <a href="{{ url_for('customers.index') }}" class="btn btn-light border px-4">Cancel</a>
+                    {{ form.submit(class="btn btn-salon-primary px-4 fw-semibold") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Preview Sticky Column -->
+    <div class="col-lg-4">
+        <div class="card card-salon p-3 sticky-top" style="top: 85px;">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Live Preview Card</span>
+                <span class="badge badge-pink">Card Preview</span>
+            </div>
+
+            <div class="text-center py-2">
+                <div class="d-inline-flex align-items-center justify-content-center bg-stat-pink rounded-circle mb-2 fw-bold" id="previewInitial" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                    B
+                </div>
+                <h5 class="fw-bold mb-0 text-dark" id="previewName">Bride Full Name</h5>
+                <div class="text-muted small font-monospace" id="previewPhone">+91 ••••• •••••</div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="small">
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Package:</span>
+                    <strong class="text-dark" id="previewPackage">—</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Total Amount:</span>
+                    <strong class="text-dark" id="previewAmount">₹ 0</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Wedding Date:</span>
+                    <strong class="text-salon" id="previewWeddingDate">Not Set</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">WhatsApp:</span>
+                    <span id="previewConsent" class="badge bg-success-subtle text-success">Opted-in</span>
+                </div>
+            </div>
+
+            <div class="p-2 bg-light rounded mt-3 text-muted" style="font-size: 0.72rem;">
+                <i class="bi bi-info-circle me-1"></i> Records saved are stored permanently in the SQLite database and backed up automatically.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const nameInput = document.getElementById("brideFullNameInput");
+    const mobileInput = document.getElementById("brideMobileInput");
+    const packageInput = document.getElementById("bridePackageInput");
+    const amountInput = document.getElementById("brideAmountInput");
+    const weddingInput = document.getElementById("brideWeddingDateInput");
+    const consentInput = document.getElementById("brideConsentInput");
+
+    const pInitial = document.getElementById("previewInitial");
+    const pName = document.getElementById("previewName");
+    const pPhone = document.getElementById("previewPhone");
+    const pPackage = document.getElementById("previewPackage");
+    const pAmount = document.getElementById("previewAmount");
+    const pWedding = document.getElementById("previewWeddingDate");
+    const pConsent = document.getElementById("previewConsent");
+
+    function updatePreview() {
+        const nameVal = nameInput ? nameInput.value.trim() : "";
+        pName.innerText = nameVal || "Bride Full Name";
+        pInitial.innerText = nameVal ? nameVal.charAt(0).toUpperCase() : "B";
+
+        const phoneVal = mobileInput ? mobileInput.value.trim() : "";
+        pPhone.innerText = phoneVal ? "+91 " + phoneVal : "+91 ••••• •••••";
+
+        const pkgVal = packageInput ? packageInput.value : "";
+        pPackage.innerText = pkgVal || "—";
+
+        const amtVal = amountInput ? amountInput.value.trim() : "";
+        pAmount.innerText = amtVal ? "₹ " + Number(amtVal).toLocaleString('en-IN') : "₹ 0";
+
+        const wedVal = weddingInput ? weddingInput.value : "";
+        if (wedVal) {
+            const parts = wedVal.split("-");
+            pWedding.innerText = parts[2] + "/" + parts[1] + "/" + parts[0];
+            pWedding.className = "text-salon fw-bold";
+        } else {
+            pWedding.innerText = "Not Set (Missing)";
+            pWedding.className = "text-warning fw-semibold";
+        }
+
+        const consent = consentInput ? consentInput.checked : true;
+        if (consent) {
+            pConsent.className = "badge bg-success-subtle text-success";
+            pConsent.innerText = "Opted-in";
+        } else {
+            pConsent.className = "badge bg-secondary-subtle text-secondary";
+            pConsent.innerText = "No Consent";
+        }
+    }
+
+    [nameInput, mobileInput, packageInput, amountInput, weddingInput, consentInput].forEach(el => {
+        if (el) {
+            el.addEventListener("input", updatePreview);
+            el.addEventListener("change", updatePreview);
+        }
+    });
+
+    updatePreview();
+});
+</script>
+{% endblock %}

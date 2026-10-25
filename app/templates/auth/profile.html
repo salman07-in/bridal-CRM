@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile &amp; Password — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 600px;">
+    <div class="card card-salon p-4">
+        <h4 class="fw-bold mb-1"><i class="bi bi-person-gear text-salon me-2"></i>Account Security</h4>
+        <p class="text-muted small mb-4">Manage your credentials and security settings.</p>
+
+        <div class="p-3 bg-light rounded-3 mb-4 d-flex align-items-center">
+            <div class="bg-stat-pink rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; font-size: 1.2rem; font-weight: bold;">
+                {{ current_user.full_name[:1] | upper }}
+            </div>
+            <div>
+                <h6 class="mb-0 fw-bold">{{ current_user.full_name }}</h6>
+                <div class="text-muted small">Username: <strong>{{ current_user.username }}</strong> &bull; Role: <span class="badge bg-secondary">{{ current_user.role }}</span></div>
+                <div class="text-muted small">Email: {{ current_user.email }}</div>
+            </div>
+        </div>
+
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Current Password</label>
+                {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else "")) }}
+                {% for err in form.current_password.errors %}
+                    <div class="text-danger small mt-1">{{ err }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">New Password</label>
+                {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else "")) }}
+                {% for err in form.new_password.errors %}
+                    <div class="text-danger small mt-1">{{ err }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold small">Confirm New Password</label>
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
+                {% for err in form.confirm_password.errors %}
+                    <div class="text-danger small mt-1">{{ err }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-light border">Cancel</a>
+                {{ form.submit(class="btn btn-salon-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

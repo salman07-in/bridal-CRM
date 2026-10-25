@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.full_name }} ({{ customer.customer_code }}) — {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-light text-dark border font-monospace">{{ customer.customer_code }}</span>
+            <span class="text-muted small">&bull; Recorded on {{ customer.created_at | date_in }}</span>
+            {% if is_newly_saved %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle animate__animated animate__fadeIn">
+                <i class="bi bi-check2-circle me-1"></i> Newly Saved Record
+            </span>
+            {% endif %}
+        </div>
+        <h2 class="h3 fw-bold mb-0 text-dark">{{ customer.full_name }}</h2>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+        <a href="{{ customer.whatsapp_click_url }}" target="_blank" class="btn btn-success btn-sm">
+            <i class="bi bi-whatsapp me-1"></i> WhatsApp Bride
+        </a>
+        <a href="{{ url_for('customers.edit', id=customer.id) }}" class="btn btn-salon-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit Details
+        </a>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Customer Info Card -->
+    <div class="col-lg-4">
+        <div class="card card-salon p-4 mb-4 text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-stat-pink rounded-circle mx-auto mb-3 fw-bold" style="width: 72px; height: 72px; font-size: 1.8rem;">
+                {{ customer.full_name[:1] | upper }}
+            </div>
+            <h4 class="fw-bold mb-1 text-dark">{{ customer.full_name }}</h4>
+            <div class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i>{{ customer.salon_branch or 'Main Branch' }}</div>
+            <div class="font-monospace fs-5 text-dark fw-semibold mb-3">{{ customer.mobile_number | phone_display }}</div>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <a href="{{ customer.whatsapp_click_url }}" target="_blank" class="btn btn-sm btn-success px-3">
+                    <i class="bi bi-whatsapp me-1"></i> WhatsApp
+                </a>
+                <a href="tel:{{ customer.clean_phone }}" class="btn btn-sm btn-outline-secondary px-3">
+                    <i class="bi bi-telephone me-1"></i> Call
+                </a>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="text-start small">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Package:</span>
+                    <strong class="text-dark">{{ customer.service_package or 'Standard Package' }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Total Amount:</span>
+                    <strong class="text-dark">{{ customer.amount | inr }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">WhatsApp Consent:</span>
+                    {% if customer.whatsapp_consent %}
+                    <span class="badge bg-success-subtle text-success">Opted-in (Allowed)</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary">No Consent</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Last Updated:</span>
+                    <span class="text-muted">{{ customer.updated_at | datetime_in }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if customer.notes %}
+        <div class="card card-salon p-3">
+            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-card-text text-salon me-2"></i>Special Notes</h6>
+            <p class="text-muted small mb-0">{{ customer.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Event Dates & Reminders Column -->
+    <div class="col-lg-8">
+        <!-- Event Dates Card -->
+        <div class="card card-salon p-4 mb-4">
+            <h5 class="fw-bold text-dark fs-6 mb-3">
+                <i class="bi bi-calendar2-heart text-salon me-2"></i>Event Dates &amp; Milestone Information
+            </h5>
+
+            <div class="row g-3">
+                <!-- Wedding Date -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3 border h-100" style="background-color: #FFFDFE; border-color: var(--salon-primary-border) !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Wedding Date</span>
+                            <span class="badge badge-pink" style="font-size: 0.68rem;">Anniversary Trigger</span>
+                        </div>
+                        {% if customer.wedding_date %}
+                            <div class="h4 fw-bold text-salon mb-1">{{ customer.wedding_date | date_in }}</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-clock-history me-1"></i> Married {{ anniversary_info.years }} year{{ 's' if anniversary_info.years > 1 else '' }} ago ({{ anniversary_info.wedding_day_formatted }})
+                            </div>
+                        {% else %}
+                            <div class="h5 fw-bold text-warning mb-1">Missing / Unknown</div>
+                            <div class="text-muted small">Wedding date is not recorded. Automated anniversary reminders are paused until updated.</div>
+                            <a href="{{ url_for('customers.edit', id=customer.id) }}" class="btn btn-sm btn-outline-warning mt-2">
+                                <i class="bi bi-pencil me-1"></i> Add Wedding Date
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Makeup Service Date -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3 border h-100 bg-light">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-uppercase text-muted fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Makeup / Service Date</span>
+                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">Operational</span>
+                        </div>
+                        {% if customer.makeup_date %}
+                            <div class="h4 fw-bold text-dark mb-1">{{ customer.makeup_date | date_in }}</div>
+                            <div class="text-muted small">Operational date when bridal service was conducted by Safiya's studio.</div>
+                        {% else %}
+                            <div class="h5 fw-bold text-muted mb-1">Not Recorded</div>
+                            <div class="text-muted small">Service date is separate from wedding date.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminder History Card -->
+        <div class="card card-salon mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold fs-6">
+                    <i class="bi bi-bell text-salon me-2"></i>Anniversary Reminder History
+                </h5>
+                <span class="badge bg-light text-dark border">{{ reminders | length }} Records</span>
+            </div>
+
+            <div class="card-body p-0">
+                {% if reminders %}
+                <div class="table-responsive">
+                    <table class="table table-salon align-middle">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Channel</th>
+                                <th>Type</th>
+                                <th>Scheduled</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reminders %}
+                            <tr>
+                                <td><strong>{{ r.anniversary_year }}</strong></td>
+                                <td>
+                                    {% if r.channel == 'whatsapp' %}
+                                    <span class="text-success"><i class="bi bi-whatsapp me-1"></i>WhatsApp</span>
+                                    {% elif r.channel == 'email' %}
+                                    <span class="text-primary"><i class="bi bi-envelope me-1"></i>Email</span>
+                                    {% else %}
+                                    <span class="text-muted">{{ r.channel }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ r.reminder_type }}</small></td>
+                                <td><small>{{ r.scheduled_for | date_in }}</small></td>
+                                <td>
+                                    {% if r.status == 'sent' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-check2 me-1"></i>Sent
+                                    </span>
+                                    {% elif r.status == 'failed' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="{{ r.error_message }}">
+                                        <i class="bi bi-x-circle me-1"></i>Failed
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        <i class="bi bi-hourglass-split me-1"></i>Pending
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if r.status in ['failed', 'pending'] %}
+                                    <form method="POST" action="{{ url_for('reminders.retry', id=r.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-light border py-0 px-2" title="Retry Send">
+                                            <i class="bi bi-arrow-repeat text-primary"></i> Retry
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted small"><i class="bi bi-check2-all text-success"></i></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted small">
+                    <i class="bi bi-bell-slash fs-4 text-secondary opacity-50 d-block mb-1"></i>
+                    No reminder logs recorded for this bride yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Audit Trail Card -->
+        <div class="card card-salon">
+            <div class="card-header bg-white py-3 px-4 border-bottom">
+                <h5 class="mb-0 fw-bold fs-6">
+                    <i class="bi bi-shield-check text-salon me-2"></i>Security Audit Trail
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if audits %}
+                <ul class="list-group list-group-flush small">
+                    {% for a in audits %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-4">
+                        <div>
+                            <span class="badge bg-light text-dark border me-2 font-monospace">{{ a.action }}</span>
+                            <span class="text-muted">By {{ a.user.username if a.user else 'System' }}</span>
+                        </div>
+                        <span class="text-muted" style="font-size: 0.75rem;">{{ a.created_at | datetime_in }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-3 text-muted small">No audit logs available.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Customer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p>Are you sure you want to permanently delete <strong>{{ customer.full_name }}</strong> (<code>{{ customer.customer_code }}</code>)?</p>
+                <p class="text-muted small mb-0">All related reminder logs will also be permanently deleted. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('customers.delete', id=customer.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger">Confirm Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

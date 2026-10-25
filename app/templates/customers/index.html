@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Register — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Bridal Customer Register</h2>
+        <p class="text-muted small mb-0">Total recorded brides: <strong>{{ pagination.total }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('import_export.import_wizard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel/CSV
+        </a>
+        <a href="{{ url_for('customers.create') }}" class="btn btn-salon-primary btn-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> Add New Bride
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card card-salon mb-4 p-3">
+    <form method="GET" action="{{ url_for('customers.index') }}" class="row g-2 align-items-center">
+        <!-- Search Query -->
+        <div class="col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" id="customerQuickSearch" class="form-control" placeholder="Search by name, phone or SAF code..." value="{{ search }}">
+            </div>
+        </div>
+
+        <!-- Branch Filter -->
+        <div class="col-md-3">
+            <select name="branch" class="form-select form-select-sm">
+                <option value="">All Branches</option>
+                {% for b in branches %}
+                <option value="{{ b }}" {% if branch == b %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Missing Wedding Date Filter -->
+        <div class="col-md-2">
+            <select name="missing_date" class="form-select form-select-sm">
+                <option value="">All Wedding Dates</option>
+                <option value="1" {% if filter_missing_date == '1' %}selected{% endif %}>⚠️ Missing Dates Only</option>
+                <option value="0" {% if filter_missing_date == '0' %}selected{% endif %}>Valid Dates Only</option>
+            </select>
+        </div>
+
+        <!-- Consent Filter -->
+        <div class="col-md-2">
+            <select name="consent" class="form-select form-select-sm">
+                <option value="">All WhatsApp Status</option>
+                <option value="1" {% if filter_consent == '1' %}selected{% endif %}>WhatsApp Opt-in</option>
+                <option value="0" {% if filter_consent == '0' %}selected{% endif %}>No Consent</option>
+            </select>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-sm btn-salon-primary w-100" title="Apply Filters">Filter</button>
+            {% if search or branch or filter_missing_date or filter_consent %}
+            <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-light border" title="Reset Filters"><i class="bi bi-x"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Customer Register Table -->
+<div class="card card-salon">
+    <div class="card-body p-0">
+        {% if pagination.items %}
+        <div class="table-responsive">
+            <table class="table table-salon align-middle">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Bride Full Name</th>
+                        <th>Mobile</th>
+                        <th>Wedding Date</th>
+                        <th>Makeup Date</th>
+                        <th>Package</th>
+                        <th>Amount</th>
+                        <th>Consent</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in pagination.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('customers.detail', id=c.id) }}" class="badge bg-light text-dark border text-decoration-none font-monospace">
+                                {{ c.customer_code }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ c.full_name }}</div>
+                            <small class="text-muted">{{ c.salon_branch or 'Main Branch' }}</small>
+                        </td>
+                        <td>
+                            <div class="font-monospace">{{ c.mobile_number | phone_display }}</div>
+                            <a href="{{ c.whatsapp_click_url }}" target="_blank" class="text-success text-decoration-none small" style="font-size: 0.75rem;">
+                                <i class="bi bi-whatsapp"></i> Chat
+                            </a>
+                        </td>
+                        <td>
+                            {% if c.wedding_date %}
+                                <span class="badge bg-stat-pink text-salon border">
+                                    <i class="bi bi-heart-fill me-1"></i>{{ c.wedding_date | date_in }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark border" title="Wedding date is unknown">
+                                    <i class="bi bi-exclamation-circle me-1"></i>Missing
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.makeup_date %}
+                                <span class="text-muted small">{{ c.makeup_date | date_in }}</span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-dark">{{ c.service_package or 'Standard' }}</small>
+                        </td>
+                        <td>
+                            <small class="fw-semibold text-dark">{{ c.amount | inr }}</small>
+                        </td>
+                        <td>
+                            {% if c.whatsapp_consent %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Yes
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border">No</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('customers.detail', id=c.id) }}" class="btn btn-light border" title="View Detail">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('customers.edit', id=c.id) }}" class="btn btn-light border" title="Edit Customer">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-light border text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ c.id }}" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade text-start" id="deleteModal{{ c.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-bottom-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Customer Record
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body py-3">
+                                            <p>Are you sure you want to permanently delete customer <strong>{{ c.full_name }}</strong> (<code>{{ c.customer_code }}</code>)?</p>
+                                            <p class="text-muted small mb-0">This will also permanently remove all corresponding reminder logs. This action cannot be undone.</p>
+                                        </div>
+                                        <div class="modal-footer border-top-0 pt-0">
+                                            <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="POST" action="{{ url_for('customers.delete', id=c.id) }}" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-danger">Confirm Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        {% if pagination.pages > 1 %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+                Showing page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> ({{ pagination.total }} records)
+            </span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.prev_num, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">Previous</a>
+                    </li>
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('customers.index', page=p, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('customers.index', page=pagination.next_num, q=search, branch=branch, missing_date=filter_missing_date, consent=filter_consent) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <div class="text-muted mb-2"><i class="bi bi-people fs-1 text-secondary opacity-50"></i></div>
+            <h6 class="text-muted fw-normal">No customer records found matching your filters.</h6>
+            {% if search or branch or filter_missing_date or filter_consent %}
+            <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
+            {% else %}
+            <a href="{{ url_for('customers.create') }}" class="btn btn-sm btn-salon-primary mt-2">Add First Customer</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

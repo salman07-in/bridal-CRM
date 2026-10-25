@@ -1,0 +1,41 @@
+[Unit]
+Description=Safiya's Makeover — Bridal CRM & Anniversary Reminder System
+After=network.target
+
+[Service]
+Type=notify
+User=safiya
+Group=safiya
+WorkingDirectory=/var/www/safiya-crm
+Environment="PATH=/var/www/safiya-crm/venv/bin:/usr/local/bin:/usr/bin"
+EnvironmentFile=/var/www/safiya-crm/.env
+
+# Low memory optimization for 1 GB RAM Oracle VM
+# 2 sync workers with 2 threads each, recycling workers every 1000 requests to prevent memory leaks
+ExecStart=/var/www/safiya-crm/venv/bin/gunicorn \
+    --workers 2 \
+    --threads 2 \
+    --worker-class gthread \
+    --worker-tmp-dir /dev/shm \
+    --bind 127.0.0.1:5000 \
+    --timeout 60 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --access-logfile /var/log/safiya-crm/access.log \
+    --error-logfile /var/log/safiya-crm/error.log \
+    wsgi:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=15
+Restart=on-failure
+RestartSec=5s
+
+# Security sandboxing
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

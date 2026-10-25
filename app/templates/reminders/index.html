@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Reminder History — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Anniversary Reminder History</h2>
+        <p class="text-muted small mb-0">Track automated and manual anniversary greetings and notifications.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('reminders.trigger_daily') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-salon-primary btn-sm">
+                <i class="bi bi-play-circle me-1"></i> Run Reminder Engine Now
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Status Metric Filters -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <a href="{{ url_for('reminders.index', status='pending') }}" class="card card-salon p-3 text-decoration-none card-stat {% if current_status == 'pending' %}border-primary border-2{% endif %}" style="border-left-color: #F59E0B;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Pending Reminders</div>
+                    <h4 class="fw-bold mb-0 text-warning-emphasis">{{ pending_count }}</h4>
+                </div>
+                <div class="stat-icon bg-stat-amber"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-sm-4">
+        <a href="{{ url_for('reminders.index', status='sent') }}" class="card card-salon p-3 text-decoration-none card-stat {% if current_status == 'sent' %}border-primary border-2{% endif %}" style="border-left-color: #10B981;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Dispatched Successfully</div>
+                    <h4 class="fw-bold mb-0 text-success">{{ sent_count }}</h4>
+                </div>
+                <div class="stat-icon bg-stat-green"><i class="bi bi-check2-circle"></i></div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-sm-4">
+        <a href="{{ url_for('reminders.index', status='failed') }}" class="card card-salon p-3 text-decoration-none card-stat {% if current_status == 'failed' %}border-primary border-2{% endif %}" style="border-left-color: #EF4444;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Failed / Needs Attention</div>
+                    <h4 class="fw-bold mb-0 text-danger">{{ failed_count }}</h4>
+                </div>
+                <div class="stat-icon bg-stat-red"><i class="bi bi-exclamation-triangle"></i></div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-salon">
+    <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold fs-6">Log Records</span>
+            {% if current_status or current_channel %}
+            <a href="{{ url_for('reminders.index') }}" class="badge bg-light text-muted border text-decoration-none">
+                Clear Filters <i class="bi bi-x"></i>
+            </a>
+            {% endif %}
+        </div>
+        <span class="text-muted small">Total: <strong>{{ pagination.total }}</strong> logs</span>
+    </div>
+
+    <div class="card-body p-0">
+        {% if pagination.items %}
+        <div class="table-responsive">
+            <table class="table table-salon align-middle">
+                <thead>
+                    <tr>
+                        <th>Idempotency Key</th>
+                        <th>Bride Name</th>
+                        <th>Mobile</th>
+                        <th>Anniversary Year</th>
+                        <th>Channel</th>
+                        <th>Type</th>
+                        <th>Scheduled Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in pagination.items %}
+                    {% set c = r.customer %}
+                    <tr>
+                        <td>
+                            <code class="small text-muted font-monospace" style="font-size: 0.72rem;">{{ r.idempotency_key }}</code>
+                        </td>
+                        <td>
+                            {% if c %}
+                            <a href="{{ url_for('customers.detail', id=c.id) }}" class="fw-bold text-dark text-decoration-none">
+                                {{ c.full_name }}
+                            </a>
+                            <div class="text-muted small" style="font-size: 0.72rem;">{{ c.customer_code }}</div>
+                            {% else %}
+                            <span class="text-muted">General / Owner</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c %}
+                            <span class="font-monospace small">{{ c.mobile_number | phone_display }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ r.anniversary_year }}</span>
+                        </td>
+                        <td>
+                            {% if r.channel == 'whatsapp' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                            </span>
+                            {% elif r.channel == 'email' %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="bi bi-envelope me-1"></i>Email
+                            </span>
+                            {% elif r.channel == 'owner_digest' %}
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                <i class="bi bi-person-lines-fill me-1"></i>Owner Digest
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">{{ r.channel }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ r.reminder_type }}</small>
+                        </td>
+                        <td>
+                            <small>{{ r.scheduled_for | date_in }}</small>
+                        </td>
+                        <td>
+                            {% if r.status == 'sent' %}
+                            <span class="badge bg-success text-white">Sent</span>
+                            {% elif r.status == 'failed' %}
+                            <span class="badge bg-danger text-white" data-bs-toggle="tooltip" title="{{ r.error_message }}">
+                                Failed ({{ r.retry_count }} retries)
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex align-items-center justify-content-end gap-1">
+                                {% if c %}
+                                <a href="{{ c.whatsapp_click_url }}" target="_blank" class="btn btn-sm btn-outline-success py-1 px-2" title="Direct WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </a>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('reminders.retry', id=r.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-light border py-1 px-2" title="Retry / Send Now">
+                                        <i class="bi bi-arrow-repeat text-primary"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+                Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong>
+            </span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reminders.index', page=pagination.prev_num, status=current_status, channel=current_channel) }}">Previous</a>
+                    </li>
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reminders.index', page=pagination.next_num, status=current_status, channel=current_channel) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-bell fs-1 text-secondary opacity-50 d-block mb-2"></i>
+            No reminder records found.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

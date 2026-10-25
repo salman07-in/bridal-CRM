@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Salon &amp; Reminder Settings — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Studio Configuration &amp; Settings</h2>
+        <p class="text-muted small mb-0">Configure salon branding, reminder intervals, SMTP credentials, and automation APIs.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Settings Form -->
+    <div class="col-lg-8">
+        <div class="card card-salon p-4">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <!-- Tab 1: Studio Details -->
+                <div class="border-bottom pb-3 mb-4">
+                    <h5 class="fw-bold text-dark fs-6 mb-3">
+                        <i class="bi bi-shop text-salon me-2"></i>Studio Identity &amp; Notification Email
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Salon / Studio Name</label>
+                            {{ form.salon_name(class="form-control" + (" is-invalid" if form.salon_name.errors else "")) }}
+                            {% for err in form.salon_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Tagline / Subtitle</label>
+                            {{ form.salon_tagline(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Studio Phone</label>
+                            {{ form.salon_phone(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Default Branch</label>
+                            {{ form.salon_branch(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Owner Notification Email *</label>
+                            {{ form.salon_owner_email(class="form-control" + (" is-invalid" if form.salon_owner_email.errors else "")) }}
+                            {% for err in form.salon_owner_email.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                            <small class="text-muted" style="font-size: 0.72rem;">Receives daily bridal digests.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Reminder Preferences -->
+                <div class="border-bottom pb-3 mb-4">
+                    <h5 class="fw-bold text-dark fs-6 mb-3">
+                        <i class="bi bi-bell text-salon me-2"></i>Anniversary Reminder Rules
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Upcoming Anniversary Forecast (Days)</label>
+                            {{ form.reminder_advance_days(class="form-control") }}
+                            <small class="text-muted" style="font-size: 0.72rem;">Number of days in advance to display upcoming anniversaries.</small>
+                        </div>
+
+                        <div class="col-md-6 d-flex align-items-center">
+                            <div class="form-check mt-3">
+                                {{ form.send_owner_daily_digest(class="form-check-input", id="digestCheck") }}
+                                <label class="form-check-label fw-semibold small" for="digestCheck">
+                                    Send Owner Daily Digest Email
+                                </label>
+                                <div class="text-muted small" style="font-size: 0.72rem;">Summarizes today's and 7-day upcoming brides at 9:00 AM IST.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: SMTP Email Configuration -->
+                <div class="border-bottom pb-3 mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold text-dark fs-6 mb-0">
+                            <i class="bi bi-envelope-at text-salon me-2"></i>SMTP Email Service
+                        </h5>
+                        <div class="form-check form-switch">
+                            {{ form.smtp_enabled(class="form-check-input", id="smtpToggle") }}
+                            <label class="form-check-label small fw-semibold" for="smtpToggle">Enable Email Service</label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">SMTP Server Host</label>
+                            {{ form.smtp_host(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Port</label>
+                            {{ form.smtp_port(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">SMTP Username / Email</label>
+                            {{ form.smtp_username(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">SMTP Password / App Password</label>
+                            {{ form.smtp_password(class="form-control", placeholder="•••••••• (leave blank to keep current)") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Sender Email Address</label>
+                            {{ form.smtp_from_email(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Sender Display Name</label>
+                            {{ form.smtp_from_name(class="form-control") }}
+                        </div>
+
+                        <div class="col-12 d-flex gap-4">
+                            <div class="form-check">
+                                {{ form.smtp_use_tls(class="form-check-input", id="tlsCheck") }}
+                                <label class="form-check-label small" for="tlsCheck">Use STARTTLS (Port 587)</label>
+                            </div>
+                            <div class="form-check">
+                                {{ form.smtp_use_ssl(class="form-check-input", id="sslCheck") }}
+                                <label class="form-check-label small" for="sslCheck">Use SSL/TLS (Port 465)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Official WhatsApp Cloud API (Optional) -->
+                <div class="border-bottom pb-3 mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold text-dark fs-6 mb-0">
+                            <i class="bi bi-whatsapp text-success me-2"></i>Official WhatsApp Business API (Optional)
+                        </h5>
+                        <div class="form-check form-switch">
+                            {{ form.whatsapp_enabled(class="form-check-input", id="waToggle") }}
+                            <label class="form-check-label small fw-semibold" for="waToggle">Enable Meta Cloud API</label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Phone Number ID</label>
+                            {{ form.whatsapp_phone_number_id(class="form-control", placeholder="e.g. 1098237462847") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Approved Template Name</label>
+                            {{ form.whatsapp_template_name(class="form-control") }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">System User Permanent Access Token</label>
+                            {{ form.whatsapp_access_token(class="form-control", placeholder="•••••••• (leave blank to keep current)") }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Automation API Key -->
+                <div class="mb-4">
+                    <h5 class="fw-bold text-dark fs-6 mb-3">
+                        <i class="bi bi-key text-salon me-2"></i>n8n &amp; Background Automation API Key
+                    </h5>
+                    <label class="form-label fw-semibold small">Internal Security API Key</label>
+                    {{ form.crm_api_key(class="form-control font-monospace") }}
+                    <small class="text-muted" style="font-size: 0.72rem;">Required in <code>X-API-KEY</code> header for protected n8n webhooks and daily cron automation.</small>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    {{ form.submit(class="btn btn-salon-primary px-4 fw-semibold") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SMTP Verification Card & Security Info -->
+    <div class="col-lg-4">
+        <!-- Test Email Form -->
+        <div class="card card-salon p-4 mb-4">
+            <h5 class="fw-bold fs-6 mb-2"><i class="bi bi-send-check text-salon me-2"></i>Test SMTP Connection</h5>
+            <p class="text-muted small mb-3">Send a live test message to verify your SMTP server settings and credentials.</p>
+
+            <form method="POST" action="{{ url_for('settings.test_email') }}">
+                {{ test_email_form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Send Test Email To</label>
+                    {{ test_email_form.test_recipient(class="form-control") }}
+                </div>
+
+                <button type="submit" class="btn btn-salon-outline w-100 py-2 fw-semibold">
+                    <i class="bi bi-envelope-paper me-1"></i> Send Verification Email
+                </button>
+            </form>
+        </div>
+
+        <!-- Deployment Architecture Card -->
+        <div class="card card-salon p-4">
+            <h5 class="fw-bold fs-6 mb-3"><i class="bi bi-hdd-network text-salon me-2"></i>System Architecture</h5>
+            <ul class="list-unstyled small text-muted mb-0">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Engine:</strong> Python Flask &bull; Gunicorn &bull; Nginx</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Database:</strong> SQLite WAL mode (zero RAM lock)</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Memory:</strong> Low-footprint tuned for 1 GB RAM</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Timezone:</strong> Asia/Kolkata (IST Standard)</li>
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Idempotency:</strong> Hardware-grade double-send guard</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

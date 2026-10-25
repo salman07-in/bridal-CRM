@@ -1,0 +1,14 @@
+[Unit]
+Description=Safiya CRM Daily Anniversary Check & Owner Digest Dispatch
+After=network.target
+
+[Service]
+Type=oneshot
+User=safiya
+Group=safiya
+WorkingDirectory=/var/www/safiya-crm
+Environment="PATH=/var/www/safiya-crm/venv/bin:/usr/local/bin:/usr/bin"
+EnvironmentFile=/var/www/safiya-crm/.env
+ExecStart=/var/www/safiya-crm/venv/bin/python scripts/run_reminders.py
+StandardOutput=append:/var/log/safiya-crm/reminder_cron.log
+StandardError=append:/var/log/safiya-crm/reminder_cron.log

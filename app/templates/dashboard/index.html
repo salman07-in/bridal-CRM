@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Studio Dashboard — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Bridal Studio Dashboard</h2>
+        <p class="text-muted small mb-0">
+            <i class="bi bi-calendar3 me-1"></i> Today is <strong>{{ summary.today.strftime("%A, %d %B %Y") }}</strong> (Asia/Kolkata IST)
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('reminders.trigger_daily') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Manually scan anniversaries &amp; send owner digest">
+                <i class="bi bi-arrow-repeat me-1"></i> Run Daily Check
+            </button>
+        </form>
+        <a href="{{ url_for('customers.create') }}" class="btn btn-salon-primary btn-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> Add New Bride
+        </a>
+    </div>
+</div>
+
+<!-- Missing Dates Alert Banner -->
+{% if summary.missing_dates_count > 0 %}
+<div class="alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between mb-4 p-3 rounded-3" style="background-color: #FFFBEB; border-left: 5px solid #F59E0B !important;">
+    <div class="d-flex align-items-center">
+        <div class="rounded-circle bg-warning bg-opacity-25 p-2 me-3 text-warning-emphasis">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+        </div>
+        <div>
+            <h6 class="mb-0 fw-bold text-warning-emphasis">Missing Wedding Dates Detected</h6>
+            <span class="text-muted small">
+                There are <strong>{{ summary.missing_dates_count }}</strong> customer record(s) without a wedding date. Anniversaries cannot be tracked until wedding dates are recorded.
+            </span>
+        </div>
+    </div>
+    <a href="{{ url_for('customers.index', missing_date='1') }}" class="btn btn-warning btn-sm text-dark fw-semibold px-3 text-nowrap ms-3">
+        Review Records <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>
+{% endif %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Brides -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-salon h-100 p-3 card-stat" style="border-left-color: #D4738C;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Total Brides</div>
+                    <h3 class="fw-bold mb-0 mt-1">{{ summary.total_brides }}</h3>
+                    <div class="text-muted small mt-1"><i class="bi bi-check2-circle text-success me-1"></i>All Recorded Clients</div>
+                </div>
+                <div class="stat-icon bg-stat-pink">
+                    <i class="bi bi-heart-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Anniversaries -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-salon h-100 p-3 card-stat" style="border-left-color: #10B981;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Today's Anniversaries</div>
+                    <h3 class="fw-bold mb-0 mt-1 text-success">{{ summary.today_count }}</h3>
+                    <div class="text-muted small mt-1"><i class="bi bi-cake2 me-1"></i>Celebrated Today</div>
+                </div>
+                <div class="stat-icon bg-stat-green">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming 7 Days -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-salon h-100 p-3 card-stat" style="border-left-color: #F59E0B;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Upcoming (7 Days)</div>
+                    <h3 class="fw-bold mb-0 mt-1 text-warning-emphasis">{{ summary.upcoming_7day_count }}</h3>
+                    <div class="text-muted small mt-1"><i class="bi bi-calendar-event me-1"></i>Next 7 Days Forecast</div>
+                </div>
+                <div class="stat-icon bg-stat-amber">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Reminders -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-salon h-100 p-3 card-stat" style="border-left-color: #6366F1;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Pending Reminders</div>
+                    <h3 class="fw-bold mb-0 mt-1 text-primary">{{ summary.pending_reminders_count }}</h3>
+                    <div class="text-muted small mt-1"><i class="bi bi-hourglass-split me-1"></i>Queued / Action Needed</div>
+                </div>
+                <div class="stat-icon" style="background-color: #EEF2FF; color: #4F46E5;">
+                    <i class="bi bi-send-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Today's Anniversaries Section -->
+    <div class="col-lg-7">
+        <div class="card card-salon h-100">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="bg-stat-pink p-2 rounded-2 me-2">
+                        <i class="bi bi-cake2-fill fs-5 text-salon"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Today's Wedding Anniversaries</h5>
+                        <small class="text-muted">Brides celebrating wedding anniversaries today</small>
+                    </div>
+                </div>
+                <span class="badge badge-pink rounded-pill px-3 py-1">{{ summary.today_count }} Bride(s)</span>
+            </div>
+
+            <div class="card-body p-0">
+                {% if summary.todays_anniversaries %}
+                <div class="table-responsive">
+                    <table class="table table-salon align-middle">
+                        <thead>
+                            <tr>
+                                <th>Bride</th>
+                                <th>Milestone</th>
+                                <th>Package</th>
+                                <th>Contact &amp; Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in summary.todays_anniversaries %}
+                            {% set c = item.customer %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-stat-pink d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 38px; height: 38px;">
+                                            {{ c.full_name[:1] | upper }}
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('customers.detail', id=c.id) }}" class="fw-bold text-dark text-decoration-none">
+                                                {{ c.full_name }}
+                                            </a>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">{{ c.customer_code }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-anniversary px-2 py-1">
+                                        <i class="bi bi-star-fill me-1"></i> {{ item.years }} Year{{ 's' if item.years > 1 else '' }}
+                                    </span>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">Married: {{ c.wedding_date | date_in }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ c.service_package or 'Bridal Package' }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="https://wa.me/{{ c.clean_phone }}?text=Dear%20{{ c.full_name | urlencode }}%2C%20Happy%20{{ item.years }}%20Wedding%20Anniversary!%20Warmest%20wishes%20from%20{{ app_name | urlencode }}." 
+                                           target="_blank" 
+                                           class="btn-whatsapp-sm" 
+                                           title="Send WhatsApp Greeting">
+                                            <i class="bi bi-whatsapp"></i> WhatsApp
+                                        </a>
+                                        <a href="tel:{{ c.clean_phone }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Call Bride">
+                                            <i class="bi bi-telephone"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="text-muted mb-2"><i class="bi bi-calendar-check fs-1 text-secondary opacity-50"></i></div>
+                    <h6 class="text-muted fw-normal">No wedding anniversaries scheduled for today.</h6>
+                    <small class="text-muted">Check upcoming anniversaries or browse the anniversary calendar.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming 7-Day Anniversaries -->
+    <div class="col-lg-5">
+        <div class="card card-salon h-100">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="bg-stat-amber p-2 rounded-2 me-2">
+                        <i class="bi bi-hourglass-bottom fs-5 text-warning-emphasis"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Next 7 Days Forecast</h5>
+                        <small class="text-muted">Upcoming wedding celebrations</small>
+                    </div>
+                </div>
+                <a href="{{ url_for('calendar.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.78rem;">
+                    View Calendar <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="card-body p-0">
+                {% if summary.upcoming_anniversaries %}
+                <ul class="list-group list-group-flush">
+                    {% for item in summary.upcoming_anniversaries %}
+                    {% set c = item.customer %}
+                    <li class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="text-center me-3 p-2 bg-light rounded-3 border" style="min-width: 54px;">
+                                <div class="fw-bold text-dark fs-6">{{ item.anniversary_date.strftime("%d") }}</div>
+                                <div class="text-muted text-uppercase" style="font-size: 0.65rem;">{{ item.anniversary_date.strftime("%b") }}</div>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('customers.detail', id=c.id) }}" class="fw-semibold text-dark text-decoration-none">
+                                    {{ c.full_name }}
+                                </a>
+                                <div class="text-muted small">
+                                    {{ item.years }} Year(s) &bull; in <strong>{{ item.days_away }} day{{ 's' if item.days_away > 1 else '' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ c.whatsapp_click_url }}" target="_blank" class="btn btn-sm btn-outline-success p-1 px-2" title="WhatsApp">
+                                <i class="bi bi-whatsapp"></i>
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="text-muted mb-2"><i class="bi bi-calendar2-heart fs-1 text-secondary opacity-50"></i></div>
+                    <h6 class="text-muted fw-normal">No anniversaries within the next 7 days.</h6>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Navigation Cards -->
+<div class="row g-3">
+    <div class="col-md-3">
+        <a href="{{ url_for('customers.create') }}" class="card card-salon p-3 text-decoration-none text-dark h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon bg-stat-pink me-3">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Add Customer</h6>
+                    <small class="text-muted">Enter bride details</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="{{ url_for('import_export.import_wizard') }}" class="card card-salon p-3 text-decoration-none text-dark h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon bg-stat-green me-3">
+                    <i class="bi bi-file-earmark-excel"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Import Excel</h6>
+                    <small class="text-muted">Bulk upload records</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="{{ url_for('calendar.index') }}" class="card card-salon p-3 text-decoration-none text-dark h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon bg-stat-amber me-3">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Calendar View</h6>
+                    <small class="text-muted">Monthly schedule</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="{{ url_for('import_export.export_view') }}" class="card card-salon p-3 text-decoration-none text-dark h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon me-3" style="background-color: #F3E8FF; color: #9333EA;">
+                    <i class="bi bi-cloud-arrow-down"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Export Data</h6>
+                    <small class="text-muted">Excel / CSV download</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

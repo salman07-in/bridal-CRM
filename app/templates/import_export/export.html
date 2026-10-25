@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Export Bridal Customers — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Export Customer Records</h2>
+        <p class="text-muted small mb-0">Generate beautifully formatted Excel spreadsheets or raw CSV files.</p>
+    </div>
+    <a href="{{ url_for('import_export.import_wizard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Instead
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card card-salon p-4">
+            <h5 class="fw-bold fs-6 mb-3"><i class="bi bi-download text-salon me-2"></i>Select Export Criteria</h5>
+
+            <form id="exportForm" method="GET">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-dark">Filter by Salon Branch</label>
+                    <select name="branch" id="exportBranch" class="form-select">
+                        <option value="">All Branches</option>
+                        {% for b in branches %}
+                        <option value="{{ b }}">{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small text-dark">Filter by Wedding Date Status</label>
+                    <select name="missing_date" id="exportMissingDate" class="form-select">
+                        <option value="">All Customers (Complete Database)</option>
+                        <option value="1">⚠️ Records with Missing Wedding Dates Only</option>
+                        <option value="0">Verified Wedding Dates Only</option>
+                    </select>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border mb-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-stat-pink me-3">
+                            <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark">Total Records in Database: {{ total_customers }}</h6>
+                            <p class="text-muted small mb-0">Excel exports are styled with header colors, formatted currency, and clean Indian date format (DD/MM/YYYY).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="button" onclick="triggerExport('excel')" class="btn btn-success flex-grow-1 py-2 fw-semibold">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Download Excel (.xlsx)
+                    </button>
+                    <button type="button" onclick="triggerExport('csv')" class="btn btn-outline-secondary flex-grow-1 py-2 fw-semibold">
+                        <i class="bi bi-file-earmark-text me-1"></i> Download CSV (.csv)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-salon p-4">
+            <h5 class="fw-bold fs-6 mb-3"><i class="bi bi-shield-lock text-salon me-2"></i>Export Security &amp; Compliance</h5>
+            <ul class="text-muted small ps-3 mb-0">
+                <li class="mb-2">Every export event is logged in the system's <strong>Audit Trail</strong> with the timestamp, downloading user, and filter parameters.</li>
+                <li class="mb-2">All downloaded phone numbers are formatted into clean contact strings ready for backup or external reporting.</li>
+                <li>Ensure exported files are kept strictly on authorized salon devices in compliance with client data privacy.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function triggerExport(format) {
+    const branch = document.getElementById("exportBranch").value;
+    const missingDate = document.getElementById("exportMissingDate").value;
+
+    let url = (format === 'excel') ? "{{ url_for('import_export.export_excel') }}" : "{{ url_for('import_export.export_csv') }}";
+    const params = new URLSearchParams();
+    if (branch) params.append("branch", branch);
+    if (missingDate) params.append("missing_date", missingDate);
+
+    if (params.toString()) {
+        url += "?" + params.toString();
+    }
+    window.location.href = url;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Import Legacy Customers — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1">Import Legacy Bridal Records</h2>
+        <p class="text-muted small mb-0">Upload Excel (.xlsx, .xls) or CSV registers dating from 2020 onwards.</p>
+    </div>
+    <a href="{{ url_for('import_export.export_view') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-cloud-arrow-down me-1"></i> Go to Export
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Upload Card -->
+    <div class="col-lg-7">
+        <div class="card card-salon p-4">
+            <h5 class="fw-bold fs-6 mb-3"><i class="bi bi-file-earmark-arrow-up text-salon me-2"></i>Select File to Inspect</h5>
+
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small text-dark" for="file">Excel or CSV File</label>
+                    {{ form.file(class="form-control" + (" is-invalid" if form.file.errors else "")) }}
+                    {% for error in form.file.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <small class="text-muted" style="font-size: 0.75rem;">Supported extensions: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code> (Max size: 16 MB).</small>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border mb-4">
+                    <h6 class="fw-bold mb-2 small text-dark"><i class="bi bi-shield-check text-success me-1"></i>Safe 2-Step Import Wizard</h6>
+                    <p class="text-muted small mb-0">
+                        Uploading a file <strong>does not insert records immediately</strong>. Our validator will first inspect every row, parse flexible date formats, detect duplicates against existing clients, and present an interactive preview report for your approval.
+                    </p>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    {{ form.submit(class="btn btn-salon-primary px-4 fw-semibold") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Template Guidelines Column -->
+    <div class="col-lg-5">
+        <div class="card card-salon p-4">
+            <h5 class="fw-bold fs-6 mb-3"><i class="bi bi-lightbulb text-salon me-2"></i>Column Header Guide</h5>
+            <p class="text-muted small">Our intelligent column mapper automatically matches any of the following standard column headers:</p>
+
+            <div class="table-responsive small">
+                <table class="table table-sm table-bordered">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Field</th>
+                            <th>Accepted Header Names</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Bride Full Name *</strong></td>
+                            <td><code>Name</code>, <code>Bride Name</code>, <code>Client Name</code>, <code>Full Name</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mobile Number *</strong></td>
+                            <td><code>Mobile</code>, <code>Phone</code>, <code>Contact</code>, <code>WhatsApp</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Wedding Date</strong></td>
+                            <td><code>Wedding Date</code>, <code>Marriage Date</code>, <code>Anniversary Date</code> (e.g. 15/02/2021)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Makeup Date</strong></td>
+                            <td><code>Makeup Date</code>, <code>Service Date</code>, <code>Booking Date</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Package</strong></td>
+                            <td><code>Package</code>, <code>Service</code>, <code>Service Package</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Amount</strong></td>
+                            <td><code>Amount</code>, <code>Price</code>, <code>Fee</code>, <code>Total</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Salon Branch</strong></td>
+                            <td><code>Branch</code>, <code>Location</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>WhatsApp Consent</strong></td>
+                            <td><code>Consent</code>, <code>WhatsApp Consent</code> (Yes / No)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-light border mt-2 p-2 small text-muted">
+                <i class="bi bi-info-circle me-1"></i> Date format tolerance: Supports standard Indian dates <code>DD/MM/YYYY</code>, <code>DD-MM-YYYY</code>, and ISO <code>YYYY-MM-DD</code>.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
