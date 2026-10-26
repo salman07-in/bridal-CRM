@@ -144,7 +144,12 @@ class Customer(db.Model):
     @property
     def is_makeup_completed(self) -> bool:
         """Returns True if the customer's makeup date or wedding date is in the past."""
-        today = date.today()
+        try:
+            from zoneinfo import ZoneInfo
+            today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+        except Exception:
+            today = date.today()
+
         if self.makeup_date:
             return self.makeup_date < today
         if self.wedding_date:

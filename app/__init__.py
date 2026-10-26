@@ -158,6 +158,13 @@ def create_app(config_class=None):
             return jsonify({"status": "error", "message": "Rate limit exceeded"}), 429
         return render_template("errors/429.html"), 429
 
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        db.session.rollback()
+        if request.path.startswith("/api/"):
+            return jsonify({"status": "error", "message": "Internal server error"}), 500
+        return render_template("errors/500.html"), 500
+
     # Auto-migrate SQLite columns if table exists
     with app.app_context():
         try:

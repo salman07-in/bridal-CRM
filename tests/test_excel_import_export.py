@@ -122,10 +122,60 @@ def test_excel_and_csv_export(app):
         assert ws.title == "Bridal Customers"
         # Row 1 is header, Rows 2 and 3 are data
         assert ws.cell(row=2, column=1).value == "SAF-EXP-01"
-        assert ws.cell(row=2, column=2).value == "Export Bride 1"
-        assert ws.cell(row=3, column=4).value == "Missing (Review)"
+        assert ws.cell(row=2, column=3).value == "Export Bride 1"
+        assert ws.cell(row=3, column=6).value == "Missing (Review)"
 
         # Test CSV Export
         csv_text = ExcelService.export_customers_to_csv([c1, c2])
         assert "Export Bride 1" in csv_text
         assert "SAF-EXP-02" in csv_text
+
+
+def test_import_and_export_financial_fields(app):
+    """Test importing and exporting slip_number, category, advance paid, and balance due."""
+    with app.app_context():
+        rows = [
+            {
+                "Bride Name": "Financial Bride",
+                "Mobile": "9876599988",
+                "Slip Number": "SLIP-888",
+                "Category": "Party Makeup",
+                "Wedding Date": "10/12/2023",
+                "Makeup Date": "10/12/2023",
+                "Package": "Party Airbrush - Huda Beauty",
+                "Amount": "5000",
+                "Advance Paid": "2000",
+                "Pre Makeup Reminder": "Yes",
+                "Consent": "Yes",
+            }
+        ]
+
+        report = ExcelService.validate_and_preview_import(rows)
+        assert report["valid_count"] == 1
+        record = report["valid_records"][0]
+        assert record["slip_number"] == "SLIP-888"
+        assert record["booking_type"] == "Party Makeup"
+        assert record["amount"] == 5000.0
+        assert record["advance_amount"] == 2000.0
+        assert record["balance_due"] == 3000.0
+        assert record["pre_makeup_reminder_enabled"] is True
+
+        # Commit to DB
+        imported = ExcelService.execute_import([record])
+        assert imported == 1
+
+        c = Customer.query.filter_by(mobile_number="9876599988").first()
+        assert c is not None
+        assert c.slip_number == "SLIP-888"
+        assert c.booking_type == "Party Makeup"
+        assert c.amount == 5000.0
+        assert c.advance_amount == 2000.0
+        assert c.balance_due == 3000.0
+        assert c.payment_status == "Partial"
+
+        # Export to CSV
+        csv_text = ExcelService.export_customers_to_csv([c])
+        assert "SLIP-888" in csv_text
+        assert "Party Makeup" in csv_text
+        assert "2000.00" in csv_text
+        assert "3000.00" in csv_text

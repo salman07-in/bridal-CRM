@@ -27,6 +27,8 @@ def main():
             print(f"[+] Daily check completed successfully:")
             print(f"    - Date: {result['today']}")
             print(f"    - Today's Anniversaries: {result['todays_count']}")
+            print(f"    - Tomorrow's Anniversaries (1-Day Eve): {result.get('tomorrows_count', 0)}")
+            print(f"    - 1-Day Pre-Makeup Appointments: {result.get('pre_makeup_count', 0)}")
             print(f"    - Upcoming 7 Days: {result['upcoming_count']}")
             print(f"    - WhatsApp Dispatches: {result['whatsapp_dispatches']}")
             print(f"    - Owner Daily Digest: {result['owner_digest_status']}")

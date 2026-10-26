@@ -7,6 +7,7 @@ from app.models.customer import Customer
 from app.models.audit_log import AuditLog
 from app.models.reminder_log import ReminderLog
 from app.forms.customer_forms import CustomerForm
+from app.services.anniversary import AnniversaryService
 from app.extensions import db
 
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -23,7 +24,7 @@ def index():
     filter_missing_date = request.args.get("missing_date", "").strip()
     filter_consent = request.args.get("consent", "").strip()
 
-    today = date.today()
+    today = AnniversaryService.get_kolkata_today()
     query = Customer.query
 
     # Search filter (name, phone, code, slip_number)
@@ -215,10 +216,12 @@ def detail(id: int):
     # Anniversary timeline details
     anniversary_info = None
     if customer.wedding_date:
-        today = datetime.now().date()
+        today = AnniversaryService.get_kolkata_today()
+        is_upcoming = customer.wedding_date > today
         years_married = today.year - customer.wedding_date.year
         anniversary_info = {
             "years": max(0, years_married),
+            "is_upcoming": is_upcoming,
             "wedding_day_formatted": customer.wedding_date.strftime("%d %B %Y"),
         }
 

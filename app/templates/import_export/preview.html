@@ -104,12 +104,15 @@
                         <thead>
                             <tr>
                                 <th>#Row</th>
+                                <th>Slip #</th>
                                 <th>Bride Full Name</th>
                                 <th>Mobile</th>
+                                <th>Category</th>
                                 <th>Wedding Date</th>
-                                <th>Makeup Date</th>
                                 <th>Package</th>
-                                <th>Amount</th>
+                                <th>Total</th>
+                                <th>Advance</th>
+                                <th>Balance</th>
                                 <th>Consent</th>
                             </tr>
                         </thead>
@@ -117,8 +120,16 @@
                             {% for r in report.valid_records[:50] %}
                             <tr>
                                 <td><span class="badge bg-light text-muted border">{{ r.row_number }}</span></td>
+                                <td>
+                                    {% if r.slip_number %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">#{{ r.slip_number }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
                                 <td><strong>{{ r.full_name }}</strong></td>
-                                <td class="font-monospace">{{ r.mobile_number }}</td>
+                                <td class="font-monospace small">{{ r.mobile_number }}</td>
+                                <td><span class="badge bg-stat-pink text-salon border" style="font-size: 0.7rem;">{{ r.booking_type or 'Bridal' }}</span></td>
                                 <td>
                                     {% if r.wedding_date %}
                                     <span class="badge bg-stat-pink text-salon border">{{ r.wedding_date.strftime("%d/%m/%Y") }}</span>
@@ -126,9 +137,16 @@
                                     <span class="badge bg-warning-subtle text-warning-emphasis">Missing</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ r.makeup_date.strftime("%d/%m/%Y") if r.makeup_date else '-' }}</td>
-                                <td>{{ r.service_package or '-' }}</td>
-                                <td>{{ r.amount if r.amount is not none else '-' }}</td>
+                                <td><small>{{ r.service_package or '-' }}</small></td>
+                                <td><span class="fw-semibold font-monospace">₹ {{ "{:,.0f}".format(r.amount) if r.amount is not none else '0' }}</span></td>
+                                <td><span class="text-success font-monospace small">₹ {{ "{:,.0f}".format(r.advance_amount or 0) }}</span></td>
+                                <td>
+                                    {% if r.balance_due and r.balance_due > 0 %}
+                                        <span class="text-danger fw-semibold font-monospace small">₹ {{ "{:,.0f}".format(r.balance_due) }}</span>
+                                    {% else %}
+                                        <span class="text-success small">₹ 0</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if r.whatsapp_consent %}
                                     <span class="badge bg-success-subtle text-success">Yes</span>

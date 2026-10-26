@@ -87,8 +87,11 @@ def trigger_daily():
     )
     db.session.commit()
 
+    tom_count = result.get("tomorrows_count", 0)
+    pre_count = result.get("pre_makeup_count", 0)
     flash(
-        f"Daily reminder check complete! {result['todays_count']} today's anniversaries evaluated, "
+        f"Daily reminder check complete! {result['todays_count']} today's anniversaries, "
+        f"{tom_count} tomorrow's (Eve) anniversaries, {pre_count} 1-day pre-makeup appointments evaluated. "
         f"{result['whatsapp_dispatches']} WhatsApp dispatched, Owner digest: {result['owner_digest_status']}.",
         "info",
     )

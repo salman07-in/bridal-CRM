@@ -168,7 +168,11 @@
                         {% if customer.wedding_date %}
                             <div class="h4 fw-bold text-salon mb-1">{{ customer.wedding_date | date_in }}</div>
                             <div class="text-muted small">
+                                {% if anniversary_info and anniversary_info.is_upcoming %}
+                                <i class="bi bi-calendar-event me-1 text-primary"></i> Upcoming Wedding on <strong>{{ anniversary_info.wedding_day_formatted }}</strong>
+                                {% elif anniversary_info %}
                                 <i class="bi bi-clock-history me-1"></i> Married {{ anniversary_info.years }} year{{ 's' if anniversary_info.years > 1 else '' }} ago ({{ anniversary_info.wedding_day_formatted }})
+                                {% endif %}
                             </div>
                         {% else %}
                             <div class="h5 fw-bold text-warning mb-1">Missing / Unknown</div>
@@ -235,7 +239,19 @@
                                     <span class="text-muted">{{ r.channel }}</span>
                                     {% endif %}
                                 </td>
-                                <td><small class="text-muted">{{ r.reminder_type }}</small></td>
+                                <td>
+                                    {% if r.reminder_type == 'eve_1day_greeting' %}
+                                    <span class="badge" style="background-color: #FAF5FF; color: #7C3AED; border: 1px solid #E9D5FF;"><i class="bi bi-moon-stars me-1"></i>1-Day Eve</span>
+                                    {% elif r.reminder_type == 'today_greeting' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-gift me-1"></i>Today's Greeting</span>
+                                    {% elif r.reminder_type == 'pre_makeup_eve' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-magic me-1"></i>1-Day Pre-Makeup</span>
+                                    {% elif r.reminder_type == 'advance_7day_notice' %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-bell me-1"></i>7-Day Notice</span>
+                                    {% else %}
+                                    <small class="text-muted">{{ r.reminder_type }}</small>
+                                    {% endif %}
+                                </td>
                                 <td><small>{{ r.scheduled_for | date_in }}</small></td>
                                 <td>
                                     {% if r.status == 'sent' %}
@@ -253,16 +269,33 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    {% if r.status in ['failed', 'pending'] %}
-                                    <form method="POST" action="{{ url_for('reminders.retry', id=r.id) }}" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-light border py-0 px-2" title="Retry Send">
-                                            <i class="bi bi-arrow-repeat text-primary"></i> Retry
-                                        </button>
-                                    </form>
-                                    {% else %}
-                                    <span class="text-muted small"><i class="bi bi-check2-all text-success"></i></span>
-                                    {% endif %}
+                                    <div class="d-flex align-items-center justify-content-end gap-1">
+                                        {% if r.channel == 'whatsapp' %}
+                                            {% if r.reminder_type == 'pre_makeup_eve' %}
+                                            <a href="{{ customer.get_pre_makeup_whatsapp_url(app_name) }}" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2" title="Send WhatsApp 1-Day Pre-Makeup Timing & Prep Guide">
+                                                <i class="bi bi-whatsapp"></i>
+                                            </a>
+                                            {% elif r.reminder_type == 'eve_1day_greeting' %}
+                                            <a href="{{ customer.get_eve_whatsapp_url(customer.get_anniversary_year_count(r.anniversary_year), app_name) }}" target="_blank" class="btn btn-sm py-0 px-2" style="background-color: #FAF5FF; color: #7C3AED; border: 1px solid #D8B4FE;" title="Send WhatsApp 1-Day Prior Wish + 20% Offer">
+                                                <i class="bi bi-whatsapp"></i>
+                                            </a>
+                                            {% elif r.reminder_type == 'today_greeting' %}
+                                            <a href="{{ customer.get_today_whatsapp_url(customer.get_anniversary_year_count(r.anniversary_year), app_name) }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2" title="Send WhatsApp Celebration Greeting">
+                                                <i class="bi bi-whatsapp"></i>
+                                            </a>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if r.status in ['failed', 'pending'] %}
+                                        <form method="POST" action="{{ url_for('reminders.retry', id=r.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-light border py-0 px-2" title="Retry Send">
+                                                <i class="bi bi-arrow-repeat text-primary"></i> Retry
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <span class="text-muted small"><i class="bi bi-check2-all text-success"></i></span>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}

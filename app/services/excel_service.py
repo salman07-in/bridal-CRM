@@ -148,12 +148,16 @@ class ExcelService:
         result = {
             "full_name": None,
             "mobile_number": None,
+            "slip_number": None,
+            "booking_type": "Bridal Makeup",
             "wedding_date": None,
             "makeup_date": None,
             "service_package": None,
             "amount": None,
+            "advance_amount": 0.0,
             "salon_branch": None,
             "notes": None,
+            "pre_makeup_reminder_enabled": True,
             "whatsapp_consent": False,
         }
 
@@ -166,6 +170,18 @@ class ExcelService:
             # Mobile Number
             elif k in ("mobile", "phone", "contact", "mobile number", "phone number", "whatsapp", "contact number"):
                 result["mobile_number"] = val
+            # Slip Number
+            elif k in ("slip", "slip no", "slip number", "receipt", "receipt no", "receipt number", "bill no", "bill number", "booking slip", "voucher"):
+                result["slip_number"] = str(val).strip() if val is not None else None
+            # Booking / Service Category
+            elif k in ("booking type", "category", "service category", "service type", "type"):
+                b_val = str(val).strip() if val is not None else "Bridal Makeup"
+                if "engage" in b_val.lower() or "roka" in b_val.lower():
+                    result["booking_type"] = "Engagement Makeup"
+                elif "party" in b_val.lower() or "guest" in b_val.lower():
+                    result["booking_type"] = "Party Makeup"
+                else:
+                    result["booking_type"] = "Bridal Makeup"
             # Wedding Date
             elif k in ("wedding date", "marriage date", "shaadi date", "anniversary date", "event date"):
                 result["wedding_date"] = val
@@ -175,7 +191,7 @@ class ExcelService:
             # Package / Service
             elif k in ("service", "package", "service package", "bridal package", "service name"):
                 result["service_package"] = str(val).strip() if val is not None else None
-            # Amount
+            # Total Amount
             elif k in ("amount", "price", "fee", "cost", "total amount", "package amount", "total"):
                 if val is not None:
                     try:
@@ -183,12 +199,24 @@ class ExcelService:
                         result["amount"] = float(clean_amt) if clean_amt else None
                     except (ValueError, TypeError):
                         result["amount"] = None
+            # Advance Paid
+            elif k in ("advance", "advance paid", "advance amount", "token", "token amount", "deposit", "adv"):
+                if val is not None:
+                    try:
+                        clean_adv = re.sub(r"[^\d.]", "", str(val))
+                        result["advance_amount"] = float(clean_adv) if clean_adv else 0.0
+                    except (ValueError, TypeError):
+                        result["advance_amount"] = 0.0
             # Salon Branch
             elif k in ("branch", "salon branch", "location", "outlet", "center"):
                 result["salon_branch"] = str(val).strip() if val is not None else None
             # Notes
             elif k in ("notes", "remarks", "comment", "special requests", "details"):
                 result["notes"] = str(val).strip() if val is not None else None
+            # Pre-Makeup Reminder
+            elif k in ("pre makeup reminder", "pre makeup", "pre reminder", "appointment reminder"):
+                pm_str = str(val).strip().lower()
+                result["pre_makeup_reminder_enabled"] = pm_str not in ("no", "n", "false", "0", "off", "disabled")
             # Consent
             elif k in ("consent", "whatsapp consent", "opt in", "whatsapp opt in", "wa consent"):
                 c_str = str(val).strip().lower()
@@ -267,16 +295,25 @@ class ExcelService:
                 })
                 continue
 
+            total_amt = mapped.get("amount")
+            adv_amt = mapped.get("advance_amount", 0.0) or 0.0
+            bal_due = max(0.0, (total_amt or 0.0) - adv_amt) if total_amt is not None else 0.0
+
             valid_records.append({
                 "row_number": idx,
+                "slip_number": mapped.get("slip_number"),
+                "booking_type": mapped.get("booking_type", "Bridal Makeup"),
                 "full_name": name,
                 "mobile_number": clean_mobile,
                 "wedding_date": parsed_w_date,
                 "makeup_date": parsed_m_date,
                 "service_package": mapped.get("service_package"),
-                "amount": mapped.get("amount"),
+                "amount": total_amt,
+                "advance_amount": adv_amt,
+                "balance_due": bal_due,
                 "salon_branch": mapped.get("salon_branch"),
                 "notes": mapped.get("notes"),
+                "pre_makeup_reminder_enabled": mapped.get("pre_makeup_reminder_enabled", True),
                 "whatsapp_consent": mapped.get("whatsapp_consent", False),
             })
 
@@ -300,14 +337,18 @@ class ExcelService:
             code = Customer.generate_next_code(current_year)
             cust = Customer(
                 customer_code=code,
+                slip_number=rec.get("slip_number"),
+                booking_type=rec.get("booking_type", "Bridal Makeup"),
                 full_name=rec["full_name"],
                 mobile_number=rec["mobile_number"],
                 wedding_date=rec["wedding_date"],
                 makeup_date=rec["makeup_date"],
                 service_package=rec["service_package"],
                 amount=rec["amount"],
+                advance_amount=rec.get("advance_amount", 0.0),
                 salon_branch=rec["salon_branch"],
                 notes=rec["notes"],
+                pre_makeup_reminder_enabled=rec.get("pre_makeup_reminder_enabled", True),
                 whatsapp_consent=rec["whatsapp_consent"],
             )
             db.session.add(cust)
@@ -337,9 +378,10 @@ class ExcelService:
         )
 
         headers = [
-            "Customer Code", "Bride Full Name", "Mobile Number", "Wedding Date (DD/MM/YYYY)",
-            "Service Date (DD/MM/YYYY)", "Package / Service", "Amount (INR)",
-            "Salon Branch", "WhatsApp Consent", "Created Date", "Notes"
+            "Customer Code", "Slip Number", "Bride Full Name", "Mobile Number", "Category",
+            "Wedding Date (DD/MM/YYYY)", "Service Date (DD/MM/YYYY)", "Package / Service",
+            "Total Amount (INR)", "Advance Paid (INR)", "Balance Due (INR)", "Payment Status",
+            "Salon Branch", "Pre-Makeup Reminder", "WhatsApp Consent", "Created Date", "Notes"
         ]
 
         ws.append(headers)
@@ -356,17 +398,26 @@ class ExcelService:
             m_str = c.makeup_date.strftime("%d/%m/%Y") if c.makeup_date else ""
             c_str = c.created_at.strftime("%d/%m/%Y") if c.created_at else ""
             consent_str = "Yes" if c.whatsapp_consent else "No"
+            pre_rem_str = "Enabled" if c.pre_makeup_reminder_enabled else "Disabled"
             amt_val = c.amount if c.amount is not None else ""
+            adv_val = c.advance_amount if c.advance_amount is not None else 0.0
+            bal_val = c.balance_due
 
             row_data = [
                 c.customer_code,
+                c.slip_number or "",
                 c.full_name,
                 c.mobile_number,
+                c.booking_type or "Bridal Makeup",
                 w_str,
                 m_str,
                 c.service_package or "",
                 amt_val,
+                adv_val,
+                bal_val,
+                c.payment_status,
                 c.salon_branch or "",
+                pre_rem_str,
                 consent_str,
                 c_str,
                 c.notes or "",
@@ -377,9 +428,9 @@ class ExcelService:
                 cell = ws.cell(row=row_idx, column=col_num)
                 cell.font = regular_font
                 cell.border = border_thin
-                if col_num in (1, 3, 4, 5, 8, 9, 10):
+                if col_num in (1, 2, 4, 5, 6, 7, 12, 13, 14, 15, 16):
                     cell.alignment = Alignment(horizontal="center")
-                elif col_num == 7: # Amount
+                elif col_num in (9, 10, 11): # Amounts
                     cell.alignment = Alignment(horizontal="right")
                     cell.number_format = "₹#,##0.00"
 
@@ -403,21 +454,28 @@ class ExcelService:
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow([
-            "Customer Code", "Bride Full Name", "Mobile Number",
-            "Wedding Date", "Makeup Date", "Package", "Amount (INR)",
-            "Salon Branch", "WhatsApp Consent", "Created Date", "Notes"
+            "Customer Code", "Slip Number", "Bride Full Name", "Mobile Number", "Category",
+            "Wedding Date", "Makeup Date", "Package", "Total Amount (INR)", "Advance Paid (INR)",
+            "Balance Due (INR)", "Payment Status", "Salon Branch", "Pre-Makeup Reminder",
+            "WhatsApp Consent", "Created Date", "Notes"
         ])
 
         for c in customers:
             writer.writerow([
                 c.customer_code,
+                c.slip_number or "",
                 c.full_name,
                 c.mobile_number,
+                c.booking_type or "Bridal Makeup",
                 c.wedding_date.strftime("%d/%m/%Y") if c.wedding_date else "",
                 c.makeup_date.strftime("%d/%m/%Y") if c.makeup_date else "",
                 c.service_package or "",
-                f"{c.amount:.2f}" if c.amount is not None else "",
+                f"{c.total_amount:.2f}",
+                f"{c.advance_paid:.2f}",
+                f"{c.balance_due:.2f}",
+                c.payment_status,
                 c.salon_branch or "",
+                "Yes" if c.pre_makeup_reminder_enabled else "No",
                 "Yes" if c.whatsapp_consent else "No",
                 c.created_at.strftime("%d/%m/%Y") if c.created_at else "",
                 c.notes or "",
