@@ -1,0 +1,23 @@
+{
+  "name": "bridal-crm",
+  "version": "1.0.0",
+  "description": "Safiya's Makeover - Bridal CRM & Anniversary Reminder Automation System",
+  "private": true,
+  "main": "wsgi.py",
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python run.py",
+    "build": "pip install -r requirements.txt",
+    "test": "pytest"
+  },
+  "keywords": [
+    "bridal",
+    "crm",
+    "salon",
+    "anniversary",
+    "python",
+    "flask"
+  ],
+  "author": "Safiya's Makeover",
+  "license": "MIT"
+}
