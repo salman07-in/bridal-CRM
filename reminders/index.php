@@ -96,7 +96,7 @@ require_once __DIR__ . '/../includes/header.php';
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link fw-semibold" id="forecast-tab" data-bs-toggle="pill" data-bs-target="#forecast-pane" type="button" role="tab">
-            <i class="bi bi-calendar7 me-1 text-primary"></i> 7-Day Forecast
+            <i class="bi bi-calendar-event me-1 text-primary"></i> 7-Day Forecast
             <span class="badge rounded-pill bg-primary ms-1"><?= count($upcoming_anniversaries) ?></span>
         </button>
     </li>

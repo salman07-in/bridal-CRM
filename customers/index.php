@@ -71,7 +71,11 @@ $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $customers = $stmt->fetchAll();
 
-// Distinct branches for filter dropdown
+// Tab badge counts
+$cnt_today = (int)$db->query("SELECT COUNT(*) FROM customers WHERE makeup_date = '{$today_str}'")->fetchColumn();
+$cnt_tmrw = (int)$db->query("SELECT COUNT(*) FROM customers WHERE makeup_date = '{$tomorrow_str}'")->fetchColumn();
+$cnt_pending = (int)$db->query("SELECT COUNT(*) FROM customers WHERE COALESCE(amount, 0) > COALESCE(advance_amount, 0)")->fetchColumn();
+$cnt_missing = (int)$db->query("SELECT COUNT(*) FROM customers WHERE wedding_date IS NULL")->fetchColumn();
 $branches = $db->query("SELECT DISTINCT salon_branch FROM customers WHERE salon_branch IS NOT NULL AND salon_branch != ''")->fetchAll(PDO::FETCH_COLUMN);
 
 require_once __DIR__ . '/../includes/header.php';
@@ -103,21 +107,33 @@ require_once __DIR__ . '/../includes/header.php';
         <li class="nav-item">
             <a class="nav-link <?= ($tab === 'today') ? 'active' : '' ?>" href="index.php?tab=today">
                 <i class="bi bi-stars me-1 text-danger"></i> Today's Makeups
+                <?php if ($cnt_today > 0): ?>
+                    <span class="badge bg-danger rounded-pill ms-1"><?= $cnt_today ?></span>
+                <?php endif; ?>
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= ($tab === 'upcoming') ? 'active' : '' ?>" href="index.php?tab=upcoming">
                 <i class="bi bi-bell-fill me-1 text-salon"></i> Tomorrow's Makeups
+                <?php if ($cnt_tmrw > 0): ?>
+                    <span class="badge rounded-pill ms-1" style="background-color: #D4738C;"><?= $cnt_tmrw ?></span>
+                <?php endif; ?>
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= ($tab === 'pending_balance') ? 'active' : '' ?>" href="index.php?tab=pending_balance">
                 <i class="bi bi-cash-stack me-1 text-danger"></i> Pending Balance
+                <?php if ($cnt_pending > 0): ?>
+                    <span class="badge bg-danger rounded-pill ms-1"><?= $cnt_pending ?></span>
+                <?php endif; ?>
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= ($tab === 'missing_date' || $missing_date === 1) ? 'active' : '' ?>" href="index.php?tab=missing_date">
                 <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> Missing Wedding Dates
+                <?php if ($cnt_missing > 0): ?>
+                    <span class="badge bg-warning text-dark rounded-pill ms-1"><?= $cnt_missing ?></span>
+                <?php endif; ?>
             </a>
         </li>
     </ul>
@@ -199,8 +215,9 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php foreach ($customers as $c): ?>
                             <?php 
                             $balance = max(0, (float)$c['amount'] - (float)$c['advance_amount']);
-                            $clean_phone = preg_replace('/[^\d]/', '', $c['mobile_number']);
-                            $wa_direct_url = "https://wa.me/{$clean_phone}";
+                            $salon_name = get_setting('salon_name', "Safiya's Makeover");
+                            $wa_msg = "Hello {$c['full_name']}! Warm greetings from {$salon_name}. We hope you are doing well!";
+                            $wa_direct_url = build_whatsapp_url($c['mobile_number'], $wa_msg);
                             ?>
                             <tr>
                                 <td class="ps-4">
