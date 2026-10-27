@@ -26,8 +26,11 @@ $where = ["1=1"];
 $params = [];
 
 if ($search !== '') {
-    $where[] = "(full_name LIKE :s OR mobile_number LIKE :s OR customer_code LIKE :s OR slip_number LIKE :s)";
-    $params['s'] = "%{$search}%";
+    $where[] = "(full_name LIKE :s1 OR mobile_number LIKE :s2 OR customer_code LIKE :s3 OR slip_number LIKE :s4)";
+    $params['s1'] = "%{$search}%";
+    $params['s2'] = "%{$search}%";
+    $params['s3'] = "%{$search}%";
+    $params['s4'] = "%{$search}%";
 }
 
 if ($missing_date === 1 || $tab === 'missing_date') {

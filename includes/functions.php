@@ -268,7 +268,7 @@ function get_setting(string $key, $default = ''): string {
  */
 function set_setting(string $key, $value, ?string $description = null): void {
     $db = get_db();
-    $stmt = $db->prepare("INSERT INTO settings (key_name, value, description) VALUES (:key, :val, :desc) ON DUPLICATE KEY UPDATE value = :val");
+    $stmt = $db->prepare("INSERT INTO settings (key_name, value, description) VALUES (:key, :val, :desc) ON DUPLICATE KEY UPDATE value = VALUES(value)");
     $stmt->execute([
         'key' => $key,
         'val' => (string)$value,
