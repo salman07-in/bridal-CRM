@@ -10,12 +10,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Mobile sidebar toggle button
   const sidebarToggle = document.getElementById("sidebarToggle");
-  if (sidebarToggle) {
-    sidebarToggle.addEventListener("click", function (e) {
-      e.preventDefault();
-      document.body.classList.toggle("sidebar-toggled");
-    });
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+  function closeSidebar() {
+    document.body.classList.remove("sidebar-toggled");
   }
+
+  function toggleSidebar(e) {
+    if (e) e.preventDefault();
+    document.body.classList.toggle("sidebar-toggled");
+  }
+
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", toggleSidebar);
+  }
+
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+  }
+
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener("click", closeSidebar);
+  }
+
+  // Auto-close sidebar on mobile when a link is clicked
+  const sidebarNavLinks = document.querySelectorAll("#sidebar-wrapper .nav-link");
+  sidebarNavLinks.forEach(function (link) {
+    link.addEventListener("click", function () {
+      if (window.innerWidth < 992) {
+        closeSidebar();
+      }
+    });
+  });
+
+  // Close sidebar on ESC key
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.body.classList.contains("sidebar-toggled")) {
+      closeSidebar();
+    }
+  });
 
   // Auto-dismiss alerts after 6 seconds
   const autoDismissAlerts = document.querySelectorAll(".alert-dismissible");
@@ -39,3 +73,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+

@@ -6,10 +6,7 @@
 require_once __DIR__ . '/functions.php';
 
 // Calculate relative path to project root
-$current_dir = dirname($_SERVER['SCRIPT_NAME']);
-$depth = substr_count(trim($current_dir, '/\\'), '/');
-$root = str_repeat('../', $depth);
-if ($root === '') $root = './';
+$root = get_app_root();
 
 // Fetch salon branding settings
 $salon_name = get_setting('salon_name', "Safiya's Makeover");
@@ -36,7 +33,7 @@ $pending_reminders_count = count($today_anniversaries);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title><?= isset($page_title) ? htmlspecialchars($page_title) . ' — ' : '' ?><?= htmlspecialchars($salon_name) ?> Bridal CRM</title>
     
     <!-- Google Fonts: Plus Jakarta Sans & Playfair Display -->
@@ -49,6 +46,85 @@ $pending_reminders_count = count($today_anniversaries);
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     
+    <!-- Core Responsive & Layout Safety CSS -->
+    <style>
+        :root {
+            --salon-primary: #D4738C;
+            --salon-primary-hover: #BF5771;
+            --salon-primary-light: #FDF5F7;
+            --salon-primary-border: #F3D5DE;
+            --salon-sidebar-width: 260px;
+            --salon-border: #E2E8F0;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #F8FAFC;
+            color: #2D3748;
+            margin: 0;
+            min-height: 100vh;
+        }
+        #sidebar-wrapper {
+            width: 260px;
+            min-height: 100vh;
+            background-color: #FFFFFF;
+            border-right: 1px solid #E2E8F0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            transition: margin 0.25s ease-in-out, transform 0.25s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        #page-content-wrapper {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin 0.25s ease-in-out, width 0.25s ease-in-out;
+            background-color: #F8FAFC;
+        }
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 1035;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        @media (max-width: 991.98px) {
+            #sidebar-wrapper {
+                margin-left: -260px;
+                box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+            }
+            #page-content-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            body.sidebar-toggled #sidebar-wrapper {
+                margin-left: 0 !important;
+            }
+            body.sidebar-toggled .sidebar-backdrop {
+                display: block !important;
+            }
+        }
+        .text-salon {
+            color: #D4738C !important;
+        }
+        .brand-logo-text {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #D4738C;
+        }
+    </style>
+
     <!-- Custom Salon CRM Stylesheet -->
     <link href="<?= $root ?>assets/css/custom.css" rel="stylesheet">
     <?php if (isset($extra_css)): ?><?= $extra_css ?><?php endif; ?>
@@ -65,7 +141,7 @@ $pending_reminders_count = count($today_anniversaries);
                     <div class="text-muted small" style="font-size: 0.75rem;"><?= htmlspecialchars($salon_tagline) ?></div>
                 </a>
             </div>
-            <button class="btn btn-sm btn-light d-lg-none" id="sidebarCloseBtn" onclick="document.body.classList.remove('sidebar-toggled');">
+            <button class="btn btn-sm btn-light d-lg-none" id="sidebarCloseBtn" type="button" aria-label="Close Sidebar" onclick="document.body.classList.remove('sidebar-toggled');">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -105,7 +181,7 @@ $pending_reminders_count = count($today_anniversaries);
         <!-- Sidebar User Footer -->
         <div class="p-3 border-top bg-light mt-auto">
             <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-stat-pink d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-weight: bold;">
+                <div class="rounded-circle bg-stat-pink d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-weight: bold; background-color: #FDF5F7; color: #D4738C;">
                     <?= strtoupper(substr($user_full_name, 0, 1)) ?>
                 </div>
                 <div class="overflow-hidden me-auto">
@@ -118,6 +194,9 @@ $pending_reminders_count = count($today_anniversaries);
             </div>
         </div>
     </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="document.body.classList.remove('sidebar-toggled');"></div>
     <?php endif; ?>
 
     <!-- Page Content Wrapper -->
@@ -126,9 +205,10 @@ $pending_reminders_count = count($today_anniversaries);
         <!-- Top Navbar -->
         <nav class="navbar navbar-topbar d-flex justify-content-between align-items-center sticky-top">
             <div class="d-flex align-items-center">
-                <button class="btn btn-outline-secondary btn-sm me-3 d-lg-none" id="sidebarToggle">
+                <button class="btn btn-outline-secondary btn-sm me-2 d-lg-none" id="sidebarToggle" type="button" aria-label="Toggle Sidebar">
                     <i class="bi bi-list fs-5"></i>
                 </button>
+                <span class="d-lg-none fw-bold brand-logo-text fs-5 me-2"><?= htmlspecialchars($salon_name) ?></span>
                 <div class="d-none d-md-block">
                     <span class="text-muted small">
                         <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($salon_branch) ?> &bull; 
@@ -138,8 +218,8 @@ $pending_reminders_count = count($today_anniversaries);
             </div>
 
             <div class="d-flex align-items-center gap-2">
-                <a href="<?= $root ?>customers/add.php" class="btn btn-salon-primary btn-sm d-none d-sm-inline-flex align-items-center gap-1">
-                    <i class="bi bi-plus-lg"></i> Add Bride
+                <a href="<?= $root ?>customers/add.php" class="btn btn-salon-primary btn-sm d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">Add Bride</span>
                 </a>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">

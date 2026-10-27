@@ -65,16 +65,33 @@ h1, h2, h3, h4, .brand-font {
   transition: all 0.3s ease;
 }
 
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1035;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
 @media (max-width: 991.98px) {
   #sidebar-wrapper {
     margin-left: calc(-1 * var(--salon-sidebar-width));
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
   }
   #page-content-wrapper {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
   }
   body.sidebar-toggled #sidebar-wrapper {
-    margin-left: 0;
+    margin-left: 0 !important;
+  }
+  body.sidebar-toggled .sidebar-backdrop {
+    display: block !important;
   }
 }
 
@@ -253,6 +270,10 @@ h1, h2, h3, h4, .brand-font {
 }
 
 /* Table styling */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
 .table-salon {
   margin-bottom: 0;
 }
@@ -266,6 +287,7 @@ h1, h2, h3, h4, .brand-font {
   font-weight: 600;
   border-bottom: 1px solid var(--salon-border);
   padding: 0.85rem 1rem;
+  white-space: nowrap;
 }
 
 .table-salon tbody td {
@@ -273,6 +295,7 @@ h1, h2, h3, h4, .brand-font {
   vertical-align: middle;
   border-bottom: 1px solid #F1F5F9;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .table-salon tbody tr:hover {

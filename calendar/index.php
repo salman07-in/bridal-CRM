@@ -87,54 +87,56 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="card card-salon border-0 shadow-sm p-3 mb-4">
-    <!-- Calendar Matrix Grid -->
-    <div class="cal-grid">
-        <!-- Headers -->
-        <div class="cal-header-cell text-danger">Sun</div>
-        <div class="cal-header-cell">Mon</div>
-        <div class="cal-header-cell">Tue</div>
-        <div class="cal-header-cell">Wed</div>
-        <div class="cal-header-cell">Thu</div>
-        <div class="cal-header-cell">Fri</div>
-        <div class="cal-header-cell text-primary">Sat</div>
+    <!-- Calendar Matrix Grid (Responsive horizontal scroll on mobile) -->
+    <div class="table-responsive">
+        <div class="cal-grid" style="min-width: 640px;">
+            <!-- Headers -->
+            <div class="cal-header-cell text-danger">Sun</div>
+            <div class="cal-header-cell">Mon</div>
+            <div class="cal-header-cell">Tue</div>
+            <div class="cal-header-cell">Wed</div>
+            <div class="cal-header-cell">Thu</div>
+            <div class="cal-header-cell">Fri</div>
+            <div class="cal-header-cell text-primary">Sat</div>
 
-        <!-- Leading Empty Days -->
-        <?php for ($i = 0; $i < $start_day_of_week; $i++): ?>
-            <div class="cal-day-cell cal-other-month"></div>
-        <?php endfor; ?>
+            <!-- Leading Empty Days -->
+            <?php for ($i = 0; $i < $start_day_of_week; $i++): ?>
+                <div class="cal-day-cell cal-other-month"></div>
+            <?php endfor; ?>
 
-        <!-- Days of Month -->
-        <?php for ($d = 1; $d <= $days_in_month; $d++): ?>
-            <?php 
-            $cell_date_str = sprintf('%04d-%02d-%02d', $year, $month, $d);
-            $is_today = ($cell_date_str === $today_str);
-            $day_events = $events_by_day[$d] ?? [];
-            ?>
-            <div class="cal-day-cell <?= $is_today ? 'cal-today' : '' ?>">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="cal-day-number"><?= $d ?></span>
-                    <?php if (!empty($day_events)): ?>
-                        <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;"><?= count($day_events) ?></span>
-                    <?php endif; ?>
+            <!-- Days of Month -->
+            <?php for ($d = 1; $d <= $days_in_month; $d++): ?>
+                <?php 
+                $cell_date_str = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                $is_today = ($cell_date_str === $today_str);
+                $day_events = $events_by_day[$d] ?? [];
+                ?>
+                <div class="cal-day-cell <?= $is_today ? 'cal-today' : '' ?>">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="cal-day-number"><?= $d ?></span>
+                        <?php if (!empty($day_events)): ?>
+                            <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;"><?= count($day_events) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php foreach ($day_events as $ev): ?>
+                        <a href="../customers/view.php?id=<?= $ev['id'] ?>" class="cal-event-pill" title="<?= htmlspecialchars($ev['name']) ?> (<?= $ev['years'] ?> Years)">
+                            <i class="bi bi-heart-fill me-1" style="font-size: 0.65rem;"></i>
+                            <strong><?= htmlspecialchars($ev['name']) ?></strong> 
+                            <span class="badge badge-anniversary ms-1" style="font-size: 0.6rem;"><?= $ev['years'] ?>y</span>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
+            <?php endfor; ?>
 
-                <?php foreach ($day_events as $ev): ?>
-                    <a href="../customers/view.php?id=<?= $ev['id'] ?>" class="cal-event-pill" title="<?= htmlspecialchars($ev['name']) ?> (<?= $ev['years'] ?> Years)">
-                        <i class="bi bi-heart-fill me-1" style="font-size: 0.65rem;"></i>
-                        <strong><?= htmlspecialchars($ev['name']) ?></strong> 
-                        <span class="badge badge-anniversary ms-1" style="font-size: 0.6rem;"><?= $ev['years'] ?>y</span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        <?php endfor; ?>
-
-        <!-- Trailing Empty Days to complete row -->
-        <?php 
-        $total_slots = $start_day_of_week + $days_in_month;
-        $remaining = (7 - ($total_slots % 7)) % 7;
-        for ($i = 0; $i < $remaining; $i++): ?>
-            <div class="cal-day-cell cal-other-month"></div>
-        <?php endfor; ?>
+            <!-- Trailing Empty Days to complete row -->
+            <?php 
+            $total_slots = $start_day_of_week + $days_in_month;
+            $remaining = (7 - ($total_slots % 7)) % 7;
+            for ($i = 0; $i < $remaining; $i++): ?>
+                <div class="cal-day-cell cal-other-month"></div>
+            <?php endfor; ?>
+        </div>
     </div>
 </div>
 

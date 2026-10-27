@@ -92,34 +92,36 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Tabs Navigation -->
-<ul class="nav nav-pills mb-3 border-bottom pb-2">
-    <li class="nav-item">
-        <a class="nav-link <?= ($tab === 'all' && !$missing_date) ? 'active' : '' ?>" href="index.php">
-            All Brides
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= ($tab === 'today') ? 'active' : '' ?>" href="index.php?tab=today">
-            <i class="bi bi-stars me-1 text-danger"></i> Today's Makeups
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= ($tab === 'upcoming') ? 'active' : '' ?>" href="index.php?tab=upcoming">
-            <i class="bi bi-bell-fill me-1 text-salon"></i> Tomorrow's Makeups
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= ($tab === 'pending_balance') ? 'active' : '' ?>" href="index.php?tab=pending_balance">
-            <i class="bi bi-cash-stack me-1 text-danger"></i> Pending Balance
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= ($tab === 'missing_date' || $missing_date === 1) ? 'active' : '' ?>" href="index.php?tab=missing_date">
-            <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> Missing Wedding Dates
-        </a>
-    </li>
-</ul>
+<!-- Tabs Navigation (Horizontally scrollable on mobile) -->
+<div class="overflow-x-auto pb-1 mb-3">
+    <ul class="nav nav-pills flex-nowrap border-bottom pb-2 text-nowrap" style="-webkit-overflow-scrolling: touch;">
+        <li class="nav-item">
+            <a class="nav-link <?= ($tab === 'all' && !$missing_date) ? 'active' : '' ?>" href="index.php">
+                All Brides
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= ($tab === 'today') ? 'active' : '' ?>" href="index.php?tab=today">
+                <i class="bi bi-stars me-1 text-danger"></i> Today's Makeups
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= ($tab === 'upcoming') ? 'active' : '' ?>" href="index.php?tab=upcoming">
+                <i class="bi bi-bell-fill me-1 text-salon"></i> Tomorrow's Makeups
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= ($tab === 'pending_balance') ? 'active' : '' ?>" href="index.php?tab=pending_balance">
+                <i class="bi bi-cash-stack me-1 text-danger"></i> Pending Balance
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= ($tab === 'missing_date' || $missing_date === 1) ? 'active' : '' ?>" href="index.php?tab=missing_date">
+                <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> Missing Wedding Dates
+            </a>
+        </li>
+    </ul>
+</div>
 
 <!-- Filter & Search Bar -->
 <div class="card card-salon border-0 shadow-sm mb-4">
@@ -129,14 +131,14 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
             <?php endif; ?>
 
-            <div class="col-md-5">
+            <div class="col-12 col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, mobile, customer code, or slip #..." value="<?= htmlspecialchars($search) ?>">
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <select name="branch" class="form-select">
                     <option value="">All Branches</option>
                     <?php foreach ($branches as $br): ?>
@@ -145,7 +147,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </select>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-6 col-md-2">
                 <select name="booking_type" class="form-select">
                     <option value="">All Booking Types</option>
                     <option value="Bridal Makeup" <?= $booking_type === 'Bridal Makeup' ? 'selected' : '' ?>>Bridal Makeup</option>
@@ -155,7 +157,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </select>
             </div>
 
-            <div class="col-md-2 d-flex gap-2">
+            <div class="col-12 col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-salon-primary w-100">Filter</button>
                 <?php if ($search || $branch || $booking_type || $tab !== 'all'): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>

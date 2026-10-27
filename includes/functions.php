@@ -330,3 +330,45 @@ function build_whatsapp_url(string $phone, string $message): string {
     $clean = preg_replace('/[^\d]/', '', $phone);
     return "https://wa.me/{$clean}?text=" . rawurlencode($message);
 }
+
+/**
+ * Calculate relative path from current executing script to application root directory.
+ * Works uniformly in root domain (public_html), subfolders (/crm), or local dev.
+ */
+function get_app_root(): string {
+    static $cached_root = null;
+    if ($cached_root !== null) {
+        return $cached_root;
+    }
+
+    $project_root_fs = realpath(__DIR__ . '/..');
+    $script_fs = realpath(dirname($_SERVER['SCRIPT_FILENAME'] ?? ''));
+
+    $depth = 0;
+    if ($project_root_fs && $script_fs) {
+        $norm_root = rtrim(str_replace('\\', '/', $project_root_fs), '/');
+        $norm_script = rtrim(str_replace('\\', '/', $script_fs), '/');
+        if ($norm_root === $norm_script) {
+            $depth = 0;
+        } elseif (strpos($norm_script, $norm_root) === 0) {
+            $relative = trim(substr($norm_script, strlen($norm_root)), '/');
+            $depth = ($relative === '') ? 0 : count(explode('/', $relative));
+        }
+    }
+
+    // Secondary fallback using SCRIPT_NAME if filesystem paths differ
+    if ($depth === 0 && !empty($_SERVER['SCRIPT_NAME'])) {
+        $script_path = trim(str_replace('\\', '/', $_SERVER['SCRIPT_NAME']), '/');
+        $parts = explode('/', $script_path);
+        array_pop($parts); // Remove script filename (e.g. index.php)
+        $known_subdirs = ['customers', 'calendar', 'reminders', 'import_export', 'settings', 'auth', 'cron'];
+        $last = strtolower(end($parts) ?: '');
+        if (in_array($last, $known_subdirs)) {
+            $depth = 1;
+        }
+    }
+
+    $cached_root = ($depth > 0) ? str_repeat('../', $depth) : './';
+    return $cached_root;
+}
+
