@@ -31,9 +31,9 @@ if (file_exists($env_file)) {
 // You can edit these 4 variables with your Hostinger hPanel Database details:
 // -----------------------------------------------------------------------------
 $DB_HOST = getenv('DB_HOST') ?: 'localhost';
-$DB_NAME = getenv('DB_NAME') ?: 'safiya_crm';
-$DB_USER = getenv('DB_USER') ?: 'root';
-$DB_PASS = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
+$DB_NAME = getenv('DB_NAME') ?: 'u791573478_bridal_crm';
+$DB_USER = getenv('DB_USER') ?: 'u791573478_admin';
+$DB_PASS = getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'ENTER_YOUR_DB_PASSWORD_HERE';
 $DB_PORT = getenv('DB_PORT') ?: '3306';
 
 // Global PDO Instance
