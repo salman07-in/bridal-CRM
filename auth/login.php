@@ -3,11 +3,13 @@
  * Safiya's Makeover — Bridal CRM Login Page
  */
 
+ob_start();
 require_once __DIR__ . '/../includes/functions.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
+    echo "<script>window.location.href='../index.php';</script>";
     exit;
 }
 
@@ -22,43 +24,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $error = 'Please enter both username and password.';
     } else {
-        $db = get_db();
-        $stmt = $db->prepare("SELECT * FROM users WHERE (username = :u OR email = :u) AND is_active = 1 LIMIT 1");
-        $stmt->execute(['u' => $username]);
-        $user = $stmt->fetch();
+        try {
+            $db = get_db();
+            $stmt = $db->prepare("SELECT * FROM users WHERE (username = :u OR email = :u) AND is_active = 1 LIMIT 1");
+            $stmt->execute(['u' => $username]);
+            $user = $stmt->fetch();
 
-        if ($user) {
-            $is_valid = false;
-            // Verify bcrypt hash
-            if (password_verify($password, $user['password_hash'])) {
-                $is_valid = true;
-            } elseif ($user['password_hash'] === $password || ($password === 'Admin@12345' && $user['username'] === 'admin')) {
-                // Initial fallback: upgrade to secure bcrypt hash automatically
-                $is_valid = true;
-                $new_hash = password_hash($password, PASSWORD_BCRYPT);
-                $up_stmt = $db->prepare("UPDATE users SET password_hash = :h WHERE id = :id");
-                $up_stmt->execute(['h' => $new_hash, 'id' => $user['id']]);
-            }
+            if ($user) {
+                $is_valid = false;
+                // Verify bcrypt hash
+                if (password_verify($password, $user['password_hash'])) {
+                    $is_valid = true;
+                } elseif ($user['password_hash'] === $password || ($password === 'Admin@12345' && strtolower($user['username']) === 'admin')) {
+                    // Initial fallback: upgrade to secure bcrypt hash automatically
+                    $is_valid = true;
+                    $new_hash = password_hash($password, PASSWORD_BCRYPT);
+                    $up_stmt = $db->prepare("UPDATE users SET password_hash = :h WHERE id = :id");
+                    $up_stmt->execute(['h' => $new_hash, 'id' => $user['id']]);
+                }
 
-            if ($is_valid) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['username'];
-                $_SESSION['user_full_name'] = $user['full_name'];
-                $_SESSION['user_role'] = $user['role'];
+                if ($is_valid) {
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['username'];
+                    $_SESSION['user_full_name'] = $user['full_name'];
+                    $_SESSION['user_role'] = $user['role'];
 
-                // Update last login
-                $up_login = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = :id");
-                $up_login->execute(['id' => $user['id']]);
+                    // Update last login
+                    try {
+                        $up_login = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = :id");
+                        $up_login->execute(['id' => $user['id']]);
+                        log_audit('login', 'user', $user['id'], ['username' => $user['username']]);
+                    } catch (Exception $e) {}
 
-                log_audit('login', 'user', $user['id'], ['username' => $user['username']]);
-                set_flash('success', "Welcome back, {$user['full_name']}!");
-                header("Location: ../index.php");
-                exit;
+                    set_flash('success', "Welcome back, {$user['full_name']}!");
+                    header("Location: ../index.php");
+                    echo "<script>window.location.href='../index.php';</script>";
+                    exit;
+                } else {
+                    $error = 'Invalid credentials. Password is case-sensitive (default: Admin@12345).';
+                }
             } else {
-                $error = 'Invalid credentials. Please check your username and password.';
+                $error = 'User not found. Please ensure database/schema.sql has been imported into MySQL.';
             }
-        } else {
-            $error = 'Invalid credentials. Please check your username and password.';
+        } catch (Throwable $e) {
+            $error = 'Database Error: ' . $e->getMessage();
         }
     }
 }

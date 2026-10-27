@@ -8,16 +8,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id'])) {
-    // Determine base url to reach login
     $script_dir = dirname($_SERVER['SCRIPT_NAME']);
-    // Normalize path to root
-    $login_url = (strpos($_SERVER['REQUEST_URI'], '/auth/') !== false) ? 'login.php' : '/auth/login.php';
+    $depth = substr_count(trim($script_dir, '/\\'), '/');
+    $root = str_repeat('../', $depth);
+    if ($root === '') $root = './';
     
-    // Fallback relative path calculation
-    $depth = substr_count(trim($_SERVER['REQUEST_URI'], '/'), '/');
-    $prefix = str_repeat('../', max(0, $depth - 1));
-    if ($prefix === '') $prefix = './';
-    
-    header("Location: {$prefix}auth/login.php");
+    header("Location: {$root}auth/login.php");
+    echo "<script>window.location.href='{$root}auth/login.php';</script>";
     exit;
 }

@@ -3,6 +3,7 @@
  * Safiya's Makeover — Bridal CRM Dashboard
  */
 
+ob_start();
 require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/includes/functions.php';
 
@@ -11,40 +12,57 @@ $db = get_db();
 $today_str = get_kolkata_today();
 $tomorrow_str = (new DateTime($today_str))->modify('+1 day')->format('Y-m-d');
 
-// 1. Total brides count
-$total_brides = (int)$db->query("SELECT COUNT(*) FROM customers")->fetchColumn();
+$total_brides = 0;
+$missing_dates_count = 0;
+$pending_clients_count = 0;
+$total_pending_amount = 0.0;
+$todays_makeups = [];
+$todays_makeup_count = 0;
+$tomorrows_makeups = [];
+$tomorrows_makeup_count = 0;
+$todays_anniversaries = [];
+$tomorrows_anniversaries = [];
+$upcoming_anniversaries = [];
+$recent_brides = [];
 
-// 2. Missing wedding dates
-$missing_dates_count = (int)$db->query("SELECT COUNT(*) FROM customers WHERE wedding_date IS NULL")->fetchColumn();
+try {
+    // 1. Total brides count
+    $total_brides = (int)$db->query("SELECT COUNT(*) FROM customers")->fetchColumn();
 
-// 3. Pending balances
-$pending_stmt = $db->query("SELECT 
-    COUNT(*) as pending_count,
-    COALESCE(SUM(GREATEST(0, COALESCE(amount, 0) - COALESCE(advance_amount, 0))), 0) as total_pending
-    FROM customers WHERE COALESCE(amount, 0) > COALESCE(advance_amount, 0)");
-$pending_row = $pending_stmt->fetch();
-$pending_clients_count = (int)$pending_row['pending_count'];
-$total_pending_amount = (float)$pending_row['total_pending'];
+    // 2. Missing wedding dates
+    $missing_dates_count = (int)$db->query("SELECT COUNT(*) FROM customers WHERE wedding_date IS NULL")->fetchColumn();
 
-// 4. Today's & Tomorrow's Makeups
-$stmt_today_makeups = $db->prepare("SELECT * FROM customers WHERE makeup_date = :today ORDER BY full_name ASC");
-$stmt_today_makeups->execute(['today' => $today_str]);
-$todays_makeups = $stmt_today_makeups->fetchAll();
-$todays_makeup_count = count($todays_makeups);
+    // 3. Pending balances
+    $pending_stmt = $db->query("SELECT 
+        COUNT(*) as pending_count,
+        COALESCE(SUM(GREATEST(0, COALESCE(amount, 0) - COALESCE(advance_amount, 0))), 0) as total_pending
+        FROM customers WHERE COALESCE(amount, 0) > COALESCE(advance_amount, 0)");
+    $pending_row = $pending_stmt->fetch();
+    $pending_clients_count = (int)$pending_row['pending_count'];
+    $total_pending_amount = (float)$pending_row['total_pending'];
 
-$stmt_tmrw_makeups = $db->prepare("SELECT * FROM customers WHERE makeup_date = :tomorrow ORDER BY full_name ASC");
-$stmt_tmrw_makeups->execute(['tomorrow' => $tomorrow_str]);
-$tomorrows_makeups = $stmt_tmrw_makeups->fetchAll();
-$tomorrows_makeup_count = count($tomorrows_makeups);
+    // 4. Today's & Tomorrow's Makeups
+    $stmt_today_makeups = $db->prepare("SELECT * FROM customers WHERE makeup_date = :today ORDER BY full_name ASC");
+    $stmt_today_makeups->execute(['today' => $today_str]);
+    $todays_makeups = $stmt_today_makeups->fetchAll();
+    $todays_makeup_count = count($todays_makeups);
 
-// 5. Anniversaries (Today, Tomorrow Eve, 7-Day Forecast)
-$todays_anniversaries = get_todays_anniversaries();
-$tomorrows_anniversaries = get_tomorrows_anniversaries();
-$upcoming_anniversaries = get_upcoming_anniversaries(7);
+    $stmt_tmrw_makeups = $db->prepare("SELECT * FROM customers WHERE makeup_date = :tomorrow ORDER BY full_name ASC");
+    $stmt_tmrw_makeups->execute(['tomorrow' => $tomorrow_str]);
+    $tomorrows_makeups = $stmt_tmrw_makeups->fetchAll();
+    $tomorrows_makeup_count = count($tomorrows_makeups);
 
-// 6. Recent Brides
-$recent_stmt = $db->query("SELECT * FROM customers ORDER BY id DESC LIMIT 6");
-$recent_brides = $recent_stmt->fetchAll();
+    // 5. Anniversaries (Today, Tomorrow Eve, 7-Day Forecast)
+    $todays_anniversaries = get_todays_anniversaries();
+    $tomorrows_anniversaries = get_tomorrows_anniversaries();
+    $upcoming_anniversaries = get_upcoming_anniversaries(7);
+
+    // 6. Recent Brides
+    $recent_stmt = $db->query("SELECT * FROM customers ORDER BY id DESC LIMIT 6");
+    $recent_brides = $recent_stmt->fetchAll();
+} catch (Throwable $db_err) {
+    set_flash('error', 'Database Notice: ' . $db_err->getMessage());
+}
 
 // Salon templates
 $wa_template = get_setting('whatsapp_anniversary_template', 'Dear {bride_name}, warm congratulations on your {years} Wedding Anniversary from {salon_name}!');

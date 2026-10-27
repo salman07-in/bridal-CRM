@@ -45,9 +45,24 @@ try {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+        PDO::MYSQL_ATTR_MULTI_STATEMENTS => true
     ];
     $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
+
+    // Auto-bootstrap schema if tables are not created yet
+    try {
+        $check_table = $pdo->query("SHOW TABLES LIKE 'users'")->fetch();
+        if (!$check_table) {
+            $schema_file = dirname(__DIR__) . '/database/schema.sql';
+            if (file_exists($schema_file)) {
+                $sql = file_get_contents($schema_file);
+                $pdo->exec($sql);
+            }
+        }
+    } catch (Exception $schema_err) {
+        // Silently continue if tables already exist
+    }
 } catch (PDOException $e) {
     // If running via CLI (Cron), print error
     if (php_sapi_name() === 'cli') {
