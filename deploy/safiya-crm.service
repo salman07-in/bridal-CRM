@@ -3,7 +3,7 @@ Description=Safiya's Makeover — Bridal CRM & Anniversary Reminder System
 After=network.target
 
 [Service]
-Type=notify
+Type=simple
 User=safiya
 Group=safiya
 WorkingDirectory=/var/www/safiya-crm

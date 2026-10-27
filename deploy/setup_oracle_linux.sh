@@ -100,9 +100,18 @@ echo "[*] Initializing SQLite database schema..."
 echo "[*] Setting security permissions..."
 chown -R "${APP_USER}:${APP_GROUP}" "${APP_DIR}"
 chown -R "${APP_USER}:${APP_GROUP}" "${LOG_DIR}"
-chmod 750 "${APP_DIR}"
+chmod 755 "${APP_DIR}"
 chmod 700 "${APP_DIR}/instance"
 chmod 600 "${APP_DIR}/.env"
+
+# Ensure Nginx user can read static files
+usermod -aG "${APP_GROUP}" nginx 2>/dev/null || true
+
+# Configure SELinux to allow Nginx network connection to Gunicorn (Oracle Linux 9)
+if command -v setsebool &>/dev/null; then
+    echo "[*] Configuring SELinux boolean for Nginx reverse proxy..."
+    setsebool -P httpd_can_network_connect 1 2>/dev/null || true
+fi
 
 # 9. Configure Systemd Services and Timers
 echo "[*] Installing systemd units..."
@@ -116,11 +125,20 @@ systemctl enable --now safiya-crm-reminder.timer
 
 # 10. Configure Nginx Reverse Proxy
 echo "[*] Configuring Nginx reverse proxy..."
+rm -f /etc/nginx/conf.d/default.conf 2>/dev/null || true
 cp "${APP_DIR}/deploy/nginx.conf" /etc/nginx/conf.d/safiya-crm.conf
 systemctl enable --now nginx
 nginx -t && systemctl reload nginx
 
-# 11. Configure Automated Daily Backup Cron
+# 11. Configure OS Firewall (firewalld)
+if command -v firewall-cmd &>/dev/null; then
+    echo "[*] Opening HTTP (80) and HTTPS (443) in firewalld..."
+    firewall-cmd --permanent --add-service=http 2>/dev/null || true
+    firewall-cmd --permanent --add-service=https 2>/dev/null || true
+    firewall-cmd --reload 2>/dev/null || true
+fi
+
+# 12. Configure Automated Daily Backup Cron
 echo "[*] Configuring automated daily backup cron job (02:00 AM)..."
 CRON_JOB="0 2 * * * ${APP_USER} /usr/bin/bash ${APP_DIR}/scripts/backup.sh >> ${LOG_DIR}/backup.log 2>&1"
 echo "${CRON_JOB}" > /etc/cron.d/safiya-crm-backup
@@ -130,5 +148,6 @@ echo "========================================================================"
 echo " [SUCCESS] Safiya's Makeover CRM is fully installed and operational!"
 echo " Check service:   systemctl status safiya-crm"
 echo " Check timer:     systemctl list-timers safiya-crm-reminder.timer"
-echo " Access locally:  curl -I http://127.0.0.1:5000/auth/login"
+echo " Open in browser: http://$(curl -s ifconfig.me || echo 'YOUR_SERVER_IP')"
+echo " For SSL/HTTPS:   certbot --nginx -d yourdomain.com"
 echo "========================================================================"
