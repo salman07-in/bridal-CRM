@@ -1,0 +1,35 @@
+# ==============================================================================
+# Safiya's Makeover — Bridal CRM (.htaccess for Hostinger Apache/LiteSpeed)
+# ==============================================================================
+
+DirectoryIndex index.php index.html
+
+# Prevent directory browsing
+Options -Indexes
+
+# Security: Strictly block access to sensitive system and environment files
+<FilesMatch "(\.env|\.sql|\.sqlite3|\.db|\.py|\.sh|\.git|Procfile|requirements\.txt|vercel\.json)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Character encoding
+AddDefaultCharset UTF-8
+
+# Compression for static CSS and JS
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

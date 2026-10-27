@@ -1,0 +1,380 @@
+/* Safiya's Makeover — Bridal CRM Custom Design System */
+:root {
+  --salon-primary: #D4738C;
+  --salon-primary-hover: #BF5771;
+  --salon-primary-light: #FDF5F7;
+  --salon-primary-border: #F3D5DE;
+  --salon-accent: #C5627C;
+  --salon-dark: #1E293B;
+  --salon-body-text: #2D3748;
+  --salon-muted: #64748B;
+  --salon-bg: #F8FAFC;
+  --salon-card-bg: #FFFFFF;
+  --salon-border: #E2E8F0;
+  --salon-sidebar-bg: #FFFFFF;
+  --salon-sidebar-width: 260px;
+  --salon-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --salon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --salon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--salon-body-text);
+  background-color: var(--salon-bg);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, .brand-font {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  color: var(--salon-dark);
+}
+
+.brand-logo-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--salon-primary);
+}
+
+/* Sidebar Styling */
+#sidebar-wrapper {
+  width: var(--salon-sidebar-width);
+  min-height: 100vh;
+  background-color: var(--salon-sidebar-bg);
+  border-right: 1px solid var(--salon-border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1030;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+#page-content-wrapper {
+  margin-left: var(--salon-sidebar-width);
+  width: calc(100% - var(--salon-sidebar-width));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 991.98px) {
+  #sidebar-wrapper {
+    margin-left: calc(-1 * var(--salon-sidebar-width));
+  }
+  #page-content-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+  body.sidebar-toggled #sidebar-wrapper {
+    margin-left: 0;
+  }
+}
+
+/* Sidebar Nav Links */
+.sidebar-brand {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--salon-primary-light);
+}
+
+.nav-sidebar {
+  padding: 1rem 0.75rem;
+  flex-grow: 1;
+}
+
+.nav-sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  color: #4B5563;
+  font-weight: 500;
+  font-size: 0.92rem;
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.nav-sidebar .nav-link i {
+  font-size: 1.15rem;
+  margin-right: 0.75rem;
+  color: var(--salon-muted);
+  transition: all 0.15s ease;
+}
+
+.nav-sidebar .nav-link:hover {
+  background-color: var(--salon-primary-light);
+  color: var(--salon-primary);
+}
+
+.nav-sidebar .nav-link:hover i {
+  color: var(--salon-primary);
+}
+
+.nav-sidebar .nav-link.active {
+  background-color: var(--salon-primary-light);
+  color: var(--salon-primary);
+  font-weight: 600;
+}
+
+.nav-sidebar .nav-link.active i {
+  color: var(--salon-primary);
+}
+
+/* Cards & Components */
+.card-salon {
+  background-color: var(--salon-card-bg);
+  border: 1px solid var(--salon-border);
+  border-radius: 12px;
+  box-shadow: var(--salon-shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-salon:hover {
+  box-shadow: var(--salon-shadow-md);
+}
+
+.card-stat {
+  border-left: 4px solid var(--salon-primary);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.bg-stat-pink {
+  background-color: var(--salon-primary-light);
+  color: var(--salon-primary);
+}
+
+.bg-stat-green {
+  background-color: #ECFDF5;
+  color: #059669;
+}
+
+.bg-stat-amber {
+  background-color: #FFFBEB;
+  color: #D97706;
+}
+
+.bg-stat-red {
+  background-color: #FEF2F2;
+  color: #DC2626;
+}
+
+.bg-stat-purple {
+  background-color: #FAF5FF;
+  color: #7C3AED;
+}
+
+.badge-eve {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.25);
+}
+
+.btn-whatsapp-eve {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-whatsapp-eve:hover, .btn-whatsapp-eve:focus {
+  background-color: #6D28D9;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+}
+
+/* Buttons */
+.btn-salon-primary {
+  background-color: var(--salon-primary);
+  border-color: var(--salon-primary);
+  color: #FFFFFF;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1.15rem;
+  transition: all 0.15s ease;
+}
+
+.btn-salon-primary:hover, .btn-salon-primary:focus {
+  background-color: var(--salon-primary-hover);
+  border-color: var(--salon-primary-hover);
+  color: #FFFFFF;
+  box-shadow: 0 4px 10px rgba(212, 115, 140, 0.35);
+}
+
+.btn-salon-outline {
+  border: 1px solid var(--salon-primary-border);
+  color: var(--salon-primary);
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.btn-salon-outline:hover {
+  background-color: var(--salon-primary-light);
+  color: var(--salon-primary-hover);
+  border-color: var(--salon-primary);
+}
+
+/* Badges */
+.badge-pink {
+  background-color: var(--salon-primary-light);
+  color: var(--salon-primary);
+  border: 1px solid var(--salon-primary-border);
+  font-weight: 500;
+}
+
+.badge-anniversary {
+  background: linear-gradient(135deg, #D4738C 0%, #B8536C 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(212, 115, 140, 0.25);
+}
+
+/* Table styling */
+.table-salon {
+  margin-bottom: 0;
+}
+
+.table-salon thead th {
+  background-color: #F8FAFC;
+  color: #64748B;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--salon-border);
+  padding: 0.85rem 1rem;
+}
+
+.table-salon tbody td {
+  padding: 0.95rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 0.9rem;
+}
+
+.table-salon tbody tr:hover {
+  background-color: #FDF9FA;
+}
+
+/* Calendar Matrix */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background-color: var(--salon-border);
+  border: 1px solid var(--salon-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cal-header-cell {
+  background-color: #F8FAFC;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.cal-day-cell {
+  background-color: #FFFFFF;
+  min-height: 105px;
+  padding: 0.5rem;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.cal-day-cell:hover {
+  background-color: #FAFAFC;
+}
+
+.cal-day-cell.cal-today {
+  background-color: #FFF8F9;
+}
+
+.cal-day-cell.cal-today .cal-day-number {
+  background-color: var(--salon-primary);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.cal-day-cell.cal-other-month {
+  background-color: #F8FAFC;
+  opacity: 0.5;
+}
+
+.cal-event-pill {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  background-color: var(--salon-primary-light);
+  border-left: 3px solid var(--salon-primary);
+  color: var(--salon-primary);
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cal-event-pill:hover {
+  background-color: #FBE6EC;
+  color: var(--salon-primary-hover);
+}
+
+/* WhatsApp pill */
+.btn-whatsapp-sm {
+  background-color: #25D366;
+  color: white;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.btn-whatsapp-sm:hover {
+  background-color: #1EBE5D;
+  color: white;
+}
+
+/* Navbar Topbar */
+.navbar-topbar {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--salon-border);
+  padding: 0.75rem 1.5rem;
+}

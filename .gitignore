@@ -45,6 +45,7 @@ instance/
 backups/
 *.dump
 *.sql
+!database/schema.sql
 
 # Logs
 logs/
