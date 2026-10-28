@@ -157,6 +157,19 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="card-body p-4">
                 <form method="POST" action="add.php" id="addBrideForm" autocomplete="off">
                     
+                    <!-- Keyboard Shortcuts & Auto-Draft Status Bar -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-2 px-3 rounded-2" style="background: #FDF4F6; border: 1px dashed #E8A8B8; font-size: 0.8rem;">
+                        <div class="text-dark">
+                            <i class="bi bi-keyboard text-salon me-1"></i> <strong>Bina Mouse Ke Data Bharein:</strong> 
+                            <span class="badge bg-white text-dark border ms-1">Tab</span> ya <span class="badge bg-white text-dark border">Enter</span> = Agla Column &bull; 
+                            <span class="badge bg-white text-dark border">← ↑ → ↓</span> = Ider / Uder / Uper / Nicha
+                        </div>
+                        <div id="draftStatusBadge" class="small text-muted align-items-center" style="display: none;">
+                            <i class="bi bi-cloud-check-fill text-success me-1"></i><span id="draftStatusText">Details Safe</span>
+                            <button type="button" id="btnClearDraft" class="btn btn-link btn-sm p-0 ms-2 text-danger text-decoration-none" style="font-size: 0.72rem;" title="Reset filled data">Reset Form</button>
+                        </div>
+                    </div>
+
                     <!-- 1. Bride Identity -->
                     <div class="row g-3 mb-4">
                         <div class="col-md-7">
@@ -347,12 +360,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevBalance = document.getElementById("previewBalance");
     const prevAnni = document.getElementById("previewAnniversaryHint");
 
+    const draftBadge = document.getElementById("draftStatusBadge");
+    const draftText = document.getElementById("draftStatusText");
+    const btnClearDraft = document.getElementById("btnClearDraft");
+    const form = document.getElementById("addBrideForm");
+    const DRAFT_KEY = "safiya_bride_form_draft_v2";
+
+    // Helper: Safely check text cursor position without throwing on number/date inputs
+    function isCursorAtStart(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === 0 && input.selectionEnd === 0;
+            }
+        } catch (e) {}
+        return true;
+    }
+
+    function isCursorAtEnd(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === input.value.length;
+            }
+        } catch (e) {}
+        return true;
+    }
+
     // Copy wedding date to makeup date
     if (btnCopyDate) {
         btnCopyDate.addEventListener("click", function() {
             if (wedInput.value) {
                 mkpInput.value = wedInput.value;
                 updatePreview();
+                saveDraft();
             }
         });
     }
@@ -366,16 +407,20 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             customPackageWrapper.style.display = "none";
             const opt = this.options[this.selectedIndex];
-            const price = opt.getAttribute("data-price");
+            const price = opt ? opt.getAttribute("data-price") : null;
             if (price) {
                 amtInput.value = price;
             }
         }
         updatePreview();
+        saveDraft();
     });
 
     if (inputCustomPackage) {
-        inputCustomPackage.addEventListener("input", updatePreview);
+        inputCustomPackage.addEventListener("input", function() {
+            updatePreview();
+            saveDraft();
+        });
     }
 
     function updatePreview() {
@@ -391,7 +436,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let pkgName = "—";
         if (selectPackage.value === "custom") {
-            pkgName = inputCustomPackage.value.trim() || "Custom Package";
+            pkgName = (inputCustomPackage && inputCustomPackage.value.trim()) || "Custom Package";
         } else if (selectPackage.value) {
             pkgName = selectPackage.value;
         }
@@ -430,9 +475,229 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    [nameInput, mobileInput, wedInput, mkpInput, amtInput, advInput].forEach(el => {
-        el.addEventListener("input", updatePreview);
+    // --- AUTO-SAVE DRAFT (Ensures filled details are NEVER lost) ---
+    function saveDraft() {
+        const slipEl = document.querySelector('input[name="slip_number"]');
+        const branchEl = document.querySelector('input[name="salon_branch"]');
+        const notesEl = document.querySelector('textarea[name="notes"]');
+        
+        const data = {
+            name: nameInput.value,
+            mobile: mobileInput.value,
+            wed: wedInput.value,
+            mkp: mkpInput.value,
+            pkg: selectPackage.value,
+            customPkg: inputCustomPackage ? inputCustomPackage.value : '',
+            amt: amtInput.value,
+            adv: advInput.value,
+            slip: slipEl ? slipEl.value : '',
+            branch: branchEl ? branchEl.value : '',
+            notes: notesEl ? notesEl.value : '',
+            savedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        if (data.name || data.mobile || data.wed || data.mkp || data.amt) {
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+                if (draftBadge) {
+                    draftBadge.style.display = "inline-flex";
+                    if (draftText) draftText.textContent = "Details Safe (" + data.savedAt + ")";
+                }
+            } catch (e) {}
+        }
+    }
+
+    function restoreDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+
+            // Restore only if currently empty
+            if (!nameInput.value && data.name) nameInput.value = data.name;
+            if (!mobileInput.value && data.mobile) mobileInput.value = data.mobile;
+            if (!wedInput.value && data.wed) wedInput.value = data.wed;
+            if (!mkpInput.value && data.mkp) mkpInput.value = data.mkp;
+
+            if (data.pkg) {
+                selectPackage.value = data.pkg;
+                if (data.pkg === "custom") {
+                    customPackageWrapper.style.display = "block";
+                    if (inputCustomPackage && data.customPkg) inputCustomPackage.value = data.customPkg;
+                }
+            }
+
+            if (!amtInput.value && data.amt) amtInput.value = data.amt;
+            if ((!advInput.value || advInput.value === '0') && data.adv) advInput.value = data.adv;
+
+            const slipEl = document.querySelector('input[name="slip_number"]');
+            if (slipEl && !slipEl.value && data.slip) slipEl.value = data.slip;
+
+            const branchEl = document.querySelector('input[name="salon_branch"]');
+            if (branchEl && data.branch) branchEl.value = data.branch;
+
+            const notesEl = document.querySelector('textarea[name="notes"]');
+            if (notesEl && !notesEl.value && data.notes) notesEl.value = data.notes;
+
+            updatePreview();
+            if (draftBadge && (data.name || data.mobile)) {
+                draftBadge.style.display = "inline-flex";
+                if (draftText) draftText.textContent = "Saved Draft Restored";
+            }
+        } catch (e) {}
+    }
+
+    if (btnClearDraft) {
+        btnClearDraft.addEventListener("click", function () {
+            if (confirm("Kiya aap bhari hui draft details reset karna chahte hain?")) {
+                localStorage.removeItem(DRAFT_KEY);
+                form.reset();
+                if (customPackageWrapper) customPackageWrapper.style.display = "none";
+                updatePreview();
+                if (draftBadge) draftBadge.style.display = "none";
+                nameInput.focus();
+            }
+        });
+    }
+
+    // Clear draft on successful form submit
+    if (form) {
+        form.addEventListener("submit", function () {
+            try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+        });
+    }
+
+    // --- KEYBOARD & ARROW NAVIGATION (No Mouse Needed) ---
+    function getLinearSequence() {
+        const seq = [nameInput, mobileInput, wedInput, mkpInput];
+        if (selectPackage.value === 'custom' && customPackageWrapper && customPackageWrapper.style.display !== 'none') {
+            seq.push(selectPackage, inputCustomPackage);
+        } else {
+            seq.push(selectPackage);
+        }
+        seq.push(amtInput, advInput);
+
+        const slipEl = document.querySelector('input[name="slip_number"]');
+        const branchEl = document.querySelector('input[name="salon_branch"]');
+        const notesEl = document.querySelector('textarea[name="notes"]');
+        if (slipEl && slipEl.offsetParent !== null) {
+            seq.push(slipEl, branchEl, notesEl);
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) seq.push(submitBtn);
+
+        return seq.filter(Boolean);
+    }
+
+    form.addEventListener("keydown", function (e) {
+        const el = e.target;
+        if (!el) return;
+
+        // In textarea, allow standard multi-line enter
+        if (el.tagName.toLowerCase() === 'textarea' && e.key === 'Enter' && !e.ctrlKey) {
+            return;
+        }
+
+        // Enter key -> Advance to next field without submitting prematurely
+        if (e.key === "Enter") {
+            if (el.tagName.toLowerCase() === 'button' || el.type === 'submit' || el.tagName.toLowerCase() === 'a') {
+                return; // Let user submit on button
+            }
+            e.preventDefault();
+            const seq = getLinearSequence();
+            const idx = seq.indexOf(el);
+            if (idx !== -1 && idx + 1 < seq.length) {
+                const nextEl = seq[idx + 1];
+                nextEl.focus();
+                if (nextEl.select && nextEl.type !== 'date') {
+                    nextEl.select();
+                }
+            }
+            return;
+        }
+
+        const key = e.key;
+        if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(key)) {
+            return;
+        }
+
+        // Dropdown select: let Up/Down select options unless Alt/Ctrl is held
+        if (el.tagName.toLowerCase() === 'select' && (key === 'ArrowUp' || key === 'ArrowDown') && !e.altKey && !e.ctrlKey) {
+            return;
+        }
+
+        // Date input: Left/Right moves between DD/MM/YYYY. Allow Alt+Arrow or Enter to jump fields.
+        if (el.type === 'date' && (key === 'ArrowLeft' || key === 'ArrowRight') && !e.altKey && !e.ctrlKey) {
+            return;
+        }
+
+        // Text / tel inputs: allow cursor movement inside text; jump when at edge or Alt is pressed
+        if ((el.type === 'text' || el.type === 'tel') && !e.altKey && !e.ctrlKey) {
+            if (key === 'ArrowLeft' && !isCursorAtStart(el)) return;
+            if (key === 'ArrowRight' && !isCursorAtEnd(el)) return;
+        }
+
+        let handled = false;
+
+        // 2D Spatial Arrow Key Movements (Ider / Uder / Uper / Nicha)
+        if (el === nameInput) {
+            if (key === 'ArrowRight') { mobileInput.focus(); mobileInput.select(); handled = true; }
+            else if (key === 'ArrowDown') { wedInput.focus(); handled = true; }
+        } else if (el === mobileInput) {
+            if (key === 'ArrowLeft') { nameInput.focus(); nameInput.select(); handled = true; }
+            else if (key === 'ArrowDown') { mkpInput.focus(); handled = true; }
+        } else if (el === wedInput) {
+            if (key === 'ArrowUp') { nameInput.focus(); handled = true; }
+            else if (key === 'ArrowRight') { mkpInput.focus(); handled = true; }
+            else if (key === 'ArrowDown') { selectPackage.focus(); handled = true; }
+        } else if (el === mkpInput) {
+            if (key === 'ArrowUp') { mobileInput.focus(); handled = true; }
+            else if (key === 'ArrowLeft') { wedInput.focus(); handled = true; }
+            else if (key === 'ArrowDown') { amtInput.focus(); handled = true; }
+        } else if (el === selectPackage || el === inputCustomPackage) {
+            if (key === 'ArrowUp' && (e.altKey || el === inputCustomPackage)) { wedInput.focus(); handled = true; }
+            else if (key === 'ArrowRight') { amtInput.focus(); handled = true; }
+            else if (key === 'ArrowDown' && (e.altKey || el === inputCustomPackage)) { amtInput.focus(); handled = true; }
+            else if (key === 'ArrowLeft') { mkpInput.focus(); handled = true; }
+        } else if (el === amtInput) {
+            if (key === 'ArrowUp') { mkpInput.focus(); handled = true; }
+            else if (key === 'ArrowLeft' && (isCursorAtStart(el) || e.altKey || el.value === '')) { selectPackage.focus(); handled = true; }
+            else if (key === 'ArrowRight' && (isCursorAtEnd(el) || e.altKey || el.value === '')) { advInput.focus(); advInput.select(); handled = true; }
+            else if (key === 'ArrowDown') { advInput.focus(); handled = true; }
+        } else if (el === advInput) {
+            if (key === 'ArrowUp') { mkpInput.focus(); handled = true; }
+            else if (key === 'ArrowLeft' && (isCursorAtStart(el) || e.altKey || el.value === '')) { amtInput.focus(); amtInput.select(); handled = true; }
+            else if (key === 'ArrowDown' || key === 'ArrowRight') {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.focus();
+                handled = true;
+            }
+        }
+
+        if (handled) {
+            e.preventDefault();
+        }
     });
+
+    // Listen to changes to auto-save and update preview
+    const allInputs = [nameInput, mobileInput, wedInput, mkpInput, amtInput, advInput];
+    allInputs.forEach(el => {
+        el.addEventListener("input", function() {
+            updatePreview();
+            saveDraft();
+        });
+    });
+
+    const slipInput = document.querySelector('input[name="slip_number"]');
+    const branchInput = document.querySelector('input[name="salon_branch"]');
+    const notesInput = document.querySelector('textarea[name="notes"]');
+    [slipInput, branchInput, notesInput].forEach(el => {
+        if (el) el.addEventListener("input", saveDraft);
+    });
+
+    // Restore draft on initial load
+    restoreDraft();
 });
 </script>
 

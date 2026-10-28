@@ -20,6 +20,15 @@
             <form method="POST" id="customerForm" novalidate>
                 {{ form.hidden_tag() }}
 
+                <!-- Keyboard Navigation Banner -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-2 px-3 rounded-2" style="background: #FDF4F6; border: 1px dashed #E8A8B8; font-size: 0.8rem;">
+                    <div class="text-dark">
+                        <i class="bi bi-keyboard text-salon me-1"></i> <strong>Bina Mouse Ke Data Bharein:</strong> 
+                        <span class="badge bg-white text-dark border ms-1">Tab</span> ya <span class="badge bg-white text-dark border">Enter</span> = Agla Column &bull; 
+                        <span class="badge bg-white text-dark border">← ↑ → ↓</span> = Ider / Uder / Uper / Nicha
+                    </div>
+                </div>
+
                 <!-- Section 1: Basic Bride Info -->
                 <div class="border-bottom pb-3 mb-3">
                     <h5 class="fw-bold text-dark fs-6 mb-3">
@@ -654,6 +663,107 @@ document.addEventListener("DOMContentLoaded", function() {
             el.addEventListener("change", updatePreview);
         }
     });
+
+    // Smart Keyboard & Arrow Navigation (No Mouse Needed)
+    const customerForm = document.getElementById("customerForm");
+    const makeupInput = document.getElementById("brideMakeupDateInput");
+
+    function isAtStart(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === 0 && input.selectionEnd === 0;
+            }
+        } catch (e) {}
+        return true;
+    }
+
+    function isAtEnd(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === input.value.length;
+            }
+        } catch (e) {}
+        return true;
+    }
+
+    if (customerForm) {
+        customerForm.addEventListener("keydown", function(e) {
+            const el = e.target;
+            if (!el) return;
+
+            if (el.tagName.toLowerCase() === 'textarea' && e.key === 'Enter' && !e.ctrlKey) return;
+
+            // Enter key advances to next field
+            if (e.key === 'Enter') {
+                if (el.tagName.toLowerCase() === 'button' || el.type === 'submit') return;
+                e.preventDefault();
+                const inputs = Array.from(customerForm.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select, button[type="submit"]'));
+                const idx = inputs.indexOf(el);
+                if (idx !== -1 && idx + 1 < inputs.length) {
+                    inputs[idx + 1].focus();
+                    if (inputs[idx + 1].select && inputs[idx + 1].type !== 'date') inputs[idx + 1].select();
+                }
+                return;
+            }
+
+            const key = e.key;
+            if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(key)) return;
+
+            if (el.tagName.toLowerCase() === 'select' && (key === 'ArrowUp' || key === 'ArrowDown') && !e.altKey && !e.ctrlKey) return;
+            if (el.type === 'date' && (key === 'ArrowLeft' || key === 'ArrowRight') && !e.altKey && !e.ctrlKey) return;
+
+            if ((el.type === 'text' || el.type === 'tel') && !e.altKey && !e.ctrlKey) {
+                if (key === 'ArrowLeft' && !isAtStart(el)) return;
+                if (key === 'ArrowRight' && !isAtEnd(el)) return;
+            }
+
+            let handled = false;
+            if (el === nameInput) {
+                if (key === 'ArrowRight') { mobileInput.focus(); mobileInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { slipInput.focus(); handled = true; }
+            } else if (el === mobileInput) {
+                if (key === 'ArrowLeft') { nameInput.focus(); nameInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { bookingTypeInput.focus(); handled = true; }
+            } else if (el === slipInput) {
+                if (key === 'ArrowUp') { nameInput.focus(); handled = true; }
+                else if (key === 'ArrowRight') { bookingTypeInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { weddingInput.focus(); handled = true; }
+            } else if (el === bookingTypeInput) {
+                if (key === 'ArrowUp') { mobileInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { slipInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { if (makeupInput) makeupInput.focus(); handled = true; }
+            } else if (el === weddingInput) {
+                if (key === 'ArrowUp') { slipInput.focus(); handled = true; }
+                else if (key === 'ArrowRight' && makeupInput) { makeupInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { packageInput.focus(); handled = true; }
+            } else if (el === makeupInput) {
+                if (key === 'ArrowUp') { bookingTypeInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { weddingInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { amountInput.focus(); handled = true; }
+            } else if (el === packageInput) {
+                if (key === 'ArrowUp') { weddingInput.focus(); handled = true; }
+                else if (key === 'ArrowRight') { amountInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { advanceInput.focus(); handled = true; }
+            } else if (el === amountInput) {
+                if (key === 'ArrowUp' && makeupInput) { makeupInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { packageInput.focus(); handled = true; }
+                else if (key === 'ArrowRight') { advanceInput.focus(); advanceInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { advanceInput.focus(); handled = true; }
+            } else if (el === advanceInput) {
+                if (key === 'ArrowUp') { amountInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { amountInput.focus(); handled = true; }
+                else if (key === 'ArrowDown' || key === 'ArrowRight') {
+                    const submitBtn = customerForm.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.focus();
+                    handled = true;
+                }
+            }
+
+            if (handled) e.preventDefault();
+        });
+    }
 
     updatePreview();
 });

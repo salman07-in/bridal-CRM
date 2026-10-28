@@ -166,7 +166,16 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="card card-salon border-0 shadow-sm col-lg-8 mx-auto">
     <div class="card-body p-4">
-        <form method="POST" action="edit.php?id=<?= $customer['id'] ?>" autocomplete="off">
+        <form method="POST" action="edit.php?id=<?= $customer['id'] ?>" id="editBrideForm" autocomplete="off">
+            <!-- Keyboard Shortcuts Status Bar -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-2 px-3 rounded-2" style="background: #FDF4F6; border: 1px dashed #E8A8B8; font-size: 0.8rem;">
+                <div class="text-dark">
+                    <i class="bi bi-keyboard text-salon me-1"></i> <strong>Bina Mouse Ke Navigate Karein:</strong> 
+                    <span class="badge bg-white text-dark border ms-1">Tab</span> ya <span class="badge bg-white text-dark border">Enter</span> = Agla Column &bull; 
+                    <span class="badge bg-white text-dark border">← ↑ → ↓</span> = Ider / Uder / Uper / Nicha
+                </div>
+            </div>
+
             <!-- 1. Identity -->
             <div class="row g-3 mb-4">
                 <div class="col-md-7">
@@ -292,6 +301,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const nameInput = document.getElementById("inputFullName");
+    const mobileInput = document.getElementById("inputMobile");
     const wedInput = document.getElementById("inputWeddingDate");
     const mkpInput = document.getElementById("inputMakeupDate");
     const btnCopyDate = document.getElementById("btnCopyDate");
@@ -301,6 +312,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const amtInput = document.getElementById("inputAmount");
     const advInput = document.getElementById("inputAdvance");
     const badgeBalanceStatus = document.getElementById("badgeBalanceStatus");
+    const form = document.getElementById("editBrideForm");
+
+    function isCursorAtStart(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === 0 && input.selectionEnd === 0;
+            }
+        } catch (e) {}
+        return true;
+    }
+
+    function isCursorAtEnd(input) {
+        if (!input) return true;
+        try {
+            if ('selectionStart' in input && input.selectionStart !== null) {
+                return input.selectionStart === input.value.length;
+            }
+        } catch (e) {}
+        return true;
+    }
 
     if (btnCopyDate) {
         btnCopyDate.addEventListener("click", function() {
@@ -318,7 +350,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             customPackageWrapper.style.display = "none";
             const opt = this.options[this.selectedIndex];
-            const price = opt.getAttribute("data-price");
+            const price = opt ? opt.getAttribute("data-price") : null;
             if (price) {
                 amtInput.value = price;
             }
@@ -345,6 +377,116 @@ document.addEventListener("DOMContentLoaded", function () {
 
     [amtInput, advInput].forEach(el => el.addEventListener("input", calcBalance));
     calcBalance();
+
+    // --- KEYBOARD & ARROW NAVIGATION ---
+    function getLinearSequence() {
+        const seq = [nameInput, mobileInput, wedInput, mkpInput];
+        if (selectPackage.value === 'custom' && customPackageWrapper && customPackageWrapper.style.display !== 'none') {
+            seq.push(selectPackage, inputCustomPackage);
+        } else {
+            seq.push(selectPackage);
+        }
+        seq.push(amtInput, advInput);
+
+        const slipEl = document.querySelector('input[name="slip_number"]');
+        const branchEl = document.querySelector('input[name="salon_branch"]');
+        const notesEl = document.querySelector('textarea[name="notes"]');
+        if (slipEl && slipEl.offsetParent !== null) {
+            seq.push(slipEl, branchEl, notesEl);
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) seq.push(submitBtn);
+
+        return seq.filter(Boolean);
+    }
+
+    if (form) {
+        form.addEventListener("keydown", function (e) {
+            const el = e.target;
+            if (!el) return;
+
+            if (el.tagName.toLowerCase() === 'textarea' && e.key === 'Enter' && !e.ctrlKey) {
+                return;
+            }
+
+            // Enter key advances to next field
+            if (e.key === "Enter") {
+                if (el.tagName.toLowerCase() === 'button' || el.type === 'submit' || el.tagName.toLowerCase() === 'a') {
+                    return;
+                }
+                e.preventDefault();
+                const seq = getLinearSequence();
+                const idx = seq.indexOf(el);
+                if (idx !== -1 && idx + 1 < seq.length) {
+                    const nextEl = seq[idx + 1];
+                    nextEl.focus();
+                    if (nextEl.select && nextEl.type !== 'date') {
+                        nextEl.select();
+                    }
+                }
+                return;
+            }
+
+            const key = e.key;
+            if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(key)) {
+                return;
+            }
+
+            if (el.tagName.toLowerCase() === 'select' && (key === 'ArrowUp' || key === 'ArrowDown') && !e.altKey && !e.ctrlKey) {
+                return;
+            }
+
+            if (el.type === 'date' && (key === 'ArrowLeft' || key === 'ArrowRight') && !e.altKey && !e.ctrlKey) {
+                return;
+            }
+
+            if ((el.type === 'text' || el.type === 'tel') && !e.altKey && !e.ctrlKey) {
+                if (key === 'ArrowLeft' && !isCursorAtStart(el)) return;
+                if (key === 'ArrowRight' && !isCursorAtEnd(el)) return;
+            }
+
+            let handled = false;
+
+            if (el === nameInput) {
+                if (key === 'ArrowRight') { mobileInput.focus(); mobileInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { wedInput.focus(); handled = true; }
+            } else if (el === mobileInput) {
+                if (key === 'ArrowLeft') { nameInput.focus(); nameInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { mkpInput.focus(); handled = true; }
+            } else if (el === wedInput) {
+                if (key === 'ArrowUp') { nameInput.focus(); handled = true; }
+                else if (key === 'ArrowRight') { mkpInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { selectPackage.focus(); handled = true; }
+            } else if (el === mkpInput) {
+                if (key === 'ArrowUp') { mobileInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { wedInput.focus(); handled = true; }
+                else if (key === 'ArrowDown') { amtInput.focus(); handled = true; }
+            } else if (el === selectPackage || el === inputCustomPackage) {
+                if (key === 'ArrowUp' && (e.altKey || el === inputCustomPackage)) { wedInput.focus(); handled = true; }
+                else if (key === 'ArrowRight') { amtInput.focus(); handled = true; }
+                else if (key === 'ArrowDown' && (e.altKey || el === inputCustomPackage)) { amtInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft') { mkpInput.focus(); handled = true; }
+            } else if (el === amtInput) {
+                if (key === 'ArrowUp') { mkpInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft' && (isCursorAtStart(el) || e.altKey || el.value === '')) { selectPackage.focus(); handled = true; }
+                else if (key === 'ArrowRight' && (isCursorAtEnd(el) || e.altKey || el.value === '')) { advInput.focus(); advInput.select(); handled = true; }
+                else if (key === 'ArrowDown') { advInput.focus(); handled = true; }
+            } else if (el === advInput) {
+                if (key === 'ArrowUp') { mkpInput.focus(); handled = true; }
+                else if (key === 'ArrowLeft' && (isCursorAtStart(el) || e.altKey || el.value === '')) { amtInput.focus(); amtInput.select(); handled = true; }
+                else if (key === 'ArrowDown' || key === 'ArrowRight') {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.focus();
+                    handled = true;
+                }
+            }
+
+            if (handled) {
+                e.preventDefault();
+            }
+        });
+    }
 });
 </script>
 
