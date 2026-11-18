@@ -171,9 +171,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         </td>
                                         <td class="text-end pe-4">
                                             <div class="d-flex justify-content-end gap-2">
-                                                <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-sm">
+                                                <button class="btn btn-whatsapp-sm send-wa" data-phone="<?= htmlspecialchars($c['mobile_number']) ?>" data-msg="<?= htmlspecialchars($msg) ?>" data-customer-id="<?= $c['id'] ?>">
                                                     <i class="bi bi-whatsapp"></i> Wish WhatsApp
-                                                </a>
+                                                </button>
                                                 <?php if (!$is_sent): ?>
                                                     <form method="POST" action="index.php" class="d-inline">
                                                         <input type="hidden" name="action" value="mark_sent">
@@ -237,9 +237,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         <td><span class="badge badge-eve px-2 py-1"><?= $item['years'] ?> Years</span></td>
                                         <td>Tomorrow (<?= format_date_in($item['anniversary_date']) ?>)</td>
                                         <td class="text-end pe-4">
-                                            <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-eve">
+                                            <button class="btn btn-whatsapp-eve send-wa" data-phone="<?= htmlspecialchars($c['mobile_number']) ?>" data-msg="<?= htmlspecialchars($msg) ?>" data-customer-id="<?= $c['id'] ?>">
                                                 <i class="bi bi-whatsapp"></i> Advance Wish
-                                            </a>
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -295,9 +295,9 @@ require_once __DIR__ . '/../includes/header.php';
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-sm">
+                                            <button class="btn btn-whatsapp-sm send-wa" data-phone="<?= htmlspecialchars($c['mobile_number']) ?>" data-msg="<?= htmlspecialchars($msg) ?>" data-customer-id="<?= $c['id'] ?>">
                                                 <i class="bi bi-whatsapp"></i> Send Appointment Alert
-                                            </a>
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -1,4 +1,47 @@
-<?php
+/**
+ * Send a WhatsApp message using the QR‑gateway micro‑service.
+ *
+ * The micro‑service must expose:
+ *   POST /send   {phone:string, text:string}
+ *   GET  /status returns {connected:boolean, phone:string}
+ *   GET  /qr    returns a PNG image of the QR code.
+ *
+ * Environment variables (in .env):
+ *   WHATSAPP_API_URL   – base URL of the service (e.g. https://xxxxx.railway.app)
+ *   WHATSAPP_API_TOKEN – secret token that the service validates.
+ */
+function whatsapp_send_message(string $phone, string $message): array {
+    $apiUrl = getenv('WHATSAPP_API_URL');
+    $token  = getenv('WHATSAPP_API_TOKEN');
+    if (!$apiUrl || !$token) {
+        return ['sent'=>false,'error'=>'WhatsApp API not configured'];
+    }
+    $payload = ['phone'=>$phone,'text'=>$message];
+    $ch = curl_init($apiUrl . '/send');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token,
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $response = curl_exec($ch);
+    $err = curl_error($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($err) {
+        return ['sent'=>false,'error'=>$err];
+    }
+    $data = json_decode($response, true);
+    if ($code===200 && ($data['sent'] ?? false)) {
+        return ['sent'=>true];
+    }
+    return ['sent'=>false,'error'=> $data['error'] ?? "Unexpected response"];
+}
+
 /**
  * Safiya's Makeover — Bridal CRM & Anniversary Reminder System
  * Global Utility Functions & Anniversary Engine

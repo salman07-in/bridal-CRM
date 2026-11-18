@@ -171,8 +171,11 @@ $pending_reminders_count = count($today_anniversaries);
                 <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;"><?= $pending_reminders_count ?></span>
                 <?php endif; ?>
             </a>
+            <a class="nav-link <?= (strpos($current_path, '/settings/whatsapp.php') !== false) ? 'active' : '' ?>" href="<?= $root ?>settings/whatsapp.php">
+                <i class="bi bi-whatsapp text-success"></i> WhatsApp Connect
+            </a>
             <?php if ($is_admin): ?>
-            <a class="nav-link <?= (strpos($current_path, '/settings/') !== false) ? 'active' : '' ?>" href="<?= $root ?>settings/index.php">
+            <a class="nav-link <?= (strpos($current_path, '/settings/') !== false && strpos($current_path, '/settings/whatsapp.php') === false) ? 'active' : '' ?>" href="<?= $root ?>settings/index.php">
                 <i class="bi bi-gear"></i> Settings
             </a>
             <?php endif; ?>

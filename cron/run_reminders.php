@@ -49,6 +49,24 @@ foreach ($todays as $item) {
         'yr' => $item['years'],
         'sched' => $today_str
     ]);
+
+    // Optional Auto-Pilot: Send WhatsApp Wish directly if enabled in settings
+    $auto_wa = getenv('WHATSAPP_AUTO_SEND') ?: get_setting('whatsapp_auto_send', '0');
+    if ($auto_wa === '1' || $auto_wa === 'true') {
+        $wa_template = get_setting('whatsapp_anniversary_template', 'Dear {bride_name}, warm congratulations on your {years} Wedding Anniversary from {salon_name}!');
+        $salon_name = get_setting('salon_name', "Safiya's Makeover");
+        $years_str = $item['years'] . (in_array($item['years'], [1]) ? 'st' : ($item['years'] == 2 ? 'nd' : ($item['years'] == 3 ? 'rd' : 'th')));
+        $wa_msg = str_replace(
+            ['{bride_name}', '{years}', '{salon_name}'],
+            [$c['full_name'], $years_str, $salon_name],
+            $wa_template
+        );
+        $res = whatsapp_send_message($c['mobile_number'], $wa_msg);
+        if ($res['sent']) {
+            $db->prepare("UPDATE reminder_logs SET status = 'SENT', sent_at = NOW() WHERE idempotency_key = :k")->execute(['k' => $key]);
+            echo "   [✓] Auto-sent WhatsApp greeting to {$c['full_name']} ({$c['mobile_number']})\n";
+        }
+    }
 }
 
 // 2. Process Tomorrow's Eve Anniversaries

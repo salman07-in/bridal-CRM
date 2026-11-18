@@ -90,9 +90,9 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-sm px-3 py-2">
+                <button class="btn btn-whatsapp-sm px-3 py-2 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($wa_msg) ?>">
             <i class="bi bi-whatsapp"></i> Send WhatsApp Wish
-        </a>
+        </button>
         <a href="edit.php?id=<?= $customer['id'] ?>" class="btn btn-outline-primary btn-sm px-3">
             <i class="bi bi-pencil me-1"></i> Edit
         </a>
@@ -247,10 +247,15 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="p-3 bg-light rounded-3 small text-secondary mb-3">
                 <?= nl2br(htmlspecialchars($wa_msg)) ?>
             </div>
-            <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-sm justify-content-center py-2 w-100">
-                <i class="bi bi-send-fill me-1"></i> Open in WhatsApp
-            </a>
-            <small class="text-muted text-center d-block mt-2" style="font-size: 0.72rem;">Opens official WhatsApp web / mobile app with pre-filled message.</small>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn btn-whatsapp-sm justify-content-center py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($wa_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                    <i class="bi bi-send-fill me-1"></i> Send Instant Wish (In-App)
+                </button>
+                <a href="<?= $wa_url ?>" target="_blank" class="btn btn-outline-success btn-sm justify-content-center py-2 w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open in External WhatsApp Web
+                </a>
+            </div>
+            <small class="text-muted text-center d-block mt-2" style="font-size: 0.72rem;">Sends instantly via linked WhatsApp, or open externally if needed.</small>
         </div>
 
         <!-- Consent Status Card -->

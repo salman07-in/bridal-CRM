@@ -241,9 +241,9 @@ require_once __DIR__ . '/includes/header.php';
                                             <div class="small text-muted mt-1">Wed: <?= format_date_in($c['wedding_date']) ?></div>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <a href="<?= $wa_url ?>" target="_blank" class="btn btn-whatsapp-sm">
+                                            <button class="btn btn-whatsapp-sm send-wa" data-phone="<?= htmlspecialchars($c['mobile_number']) ?>" data-msg="<?= htmlspecialchars($msg) ?>" data-customer-id="<?= $c['id'] ?>">
                                                 <i class="bi bi-whatsapp"></i> Wish WhatsApp
-                                            </a>
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

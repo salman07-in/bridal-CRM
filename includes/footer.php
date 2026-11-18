@@ -16,7 +16,9 @@
     <!-- Bootstrap 5.3.3 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom Application JS -->
+    <script>window.APP_ROOT = '<?= $root ?>';</script>
     <script src="<?= $root ?>assets/js/app.js"></script>
+    <script src="<?= $root ?>assets/js/whatsapp_send.js"></script>
     <?php if (isset($extra_js)): ?><?= $extra_js ?><?php endif; ?>
 </body>
 </html>

@@ -28,12 +28,12 @@ if (file_exists($env_file)) {
 
 // -----------------------------------------------------------------------------
 // Hostinger MySQL Configuration
-// You can edit these 4 variables with your Hostinger hPanel Database details:
+// You can edit these variables or set them in a .env file:
 // -----------------------------------------------------------------------------
 $DB_HOST = getenv('DB_HOST') ?: 'localhost';
 $DB_NAME = getenv('DB_NAME') ?: 'u791573478_bridal_crm';
-$DB_USER = getenv('DB_USER') ?: 'u791573478_admin';
-$DB_PASS = getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'ENTER_YOUR_DB_PASSWORD_HERE';
+$DB_USER = getenv('DB_USER') ?: 'u791573478_Salmancrm';
+$DB_PASS = (getenv('DB_PASS') !== false && getenv('DB_PASS') !== '') ? getenv('DB_PASS') : 'ENTER_YOUR_DB_PASSWORD_HERE';
 $DB_PORT = getenv('DB_PORT') ?: '3306';
 
 // Global PDO Instance
