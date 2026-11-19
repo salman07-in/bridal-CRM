@@ -31,9 +31,9 @@ if (file_exists($env_file)) {
 // You can edit these variables or set them in a .env file:
 // -----------------------------------------------------------------------------
 $DB_HOST = getenv('DB_HOST') ?: 'localhost';
-$DB_NAME = getenv('DB_NAME') ?: 'u791573478_bridal_crm';
+$DB_NAME = getenv('DB_NAME') ?: 'u791573478_mmcrm';
 $DB_USER = getenv('DB_USER') ?: 'u791573478_Salmancrm';
-$DB_PASS = (getenv('DB_PASS') !== false && getenv('DB_PASS') !== '') ? getenv('DB_PASS') : 'ENTER_YOUR_DB_PASSWORD_HERE';
+$DB_PASS = getenv('DB_PASS') ?: 'ENTER_YOUR_DB_PASSWORD_HERE';
 $DB_PORT = getenv('DB_PORT') ?: '3306';
 
 // Global PDO Instance
