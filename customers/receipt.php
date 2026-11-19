@@ -90,8 +90,11 @@ $wa_url = build_whatsapp_url($customer['mobile_number'], $receipt_msg);
         </a>
         <div class="d-flex gap-2">
             <button class="btn btn-success btn-sm send-wa px-3" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($receipt_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
-                <i class="bi bi-whatsapp me-1"></i> Send Slip on WhatsApp
+                <i class="bi bi-send-fill me-1"></i> Send via Linked WhatsApp
             </button>
+            <a href="<?= $wa_url ?>" target="_blank" class="btn btn-outline-success btn-sm px-3">
+                <i class="bi bi-whatsapp me-1"></i> Open in WhatsApp App
+            </a>
             <button onclick="window.print();" class="btn btn-dark btn-sm px-3">
                 <i class="bi bi-printer me-1"></i> Print / PDF
             </button>

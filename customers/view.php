@@ -89,6 +89,10 @@ $receipt_msg = "✨ *{$salon_name}* — Official Booking Receipt ✨\n\n" .
                "📞 *Contact:* " . get_setting('salon_phone', '+91 95195 06233') . " | " . get_setting('salon_phone_2', '+91 86046 59368') . "\n\n" .
                "Thank you for booking with {$salon_name}! 💖";
 
+$receipt_url = build_whatsapp_url($customer['mobile_number'], $receipt_msg);
+$balance_url = build_whatsapp_url($customer['mobile_number'], $balance_msg);
+$review_url = build_whatsapp_url($customer['mobile_number'], $review_msg);
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -291,8 +295,11 @@ require_once __DIR__ . '/../includes/header.php';
                     <i class="bi bi-printer me-1"></i> View &amp; Print Booking Slip
                 </a>
                 <button class="btn btn-success btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($receipt_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
-                    <i class="bi bi-whatsapp me-1"></i> Send Booking Slip on WhatsApp
+                    <i class="bi bi-send-fill me-1"></i> Send Slip via Linked WhatsApp
                 </button>
+                <a href="<?= $receipt_url ?>" target="_blank" class="btn btn-outline-success btn-sm py-2 w-100">
+                    <i class="bi bi-whatsapp me-1"></i> Open Slip in WhatsApp App
+                </a>
             </div>
         </div>
 
@@ -303,9 +310,14 @@ require_once __DIR__ . '/../includes/header.php';
                 <i class="bi bi-cash-stack fs-5"></i> Pending Balance Alert
             </h6>
             <p class="small text-muted mb-3">Balance due: <strong class="text-danger font-monospace"><?= format_inr($balance) ?></strong></p>
-            <button class="btn btn-danger btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($balance_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
-                <i class="bi bi-bell-fill me-1"></i> Send Balance Due Reminder
-            </button>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn btn-danger btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($balance_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                    <i class="bi bi-bell-fill me-1"></i> Send Balance Reminder
+                </button>
+                <a href="<?= $balance_url ?>" target="_blank" class="btn btn-outline-danger btn-sm py-2 w-100">
+                    <i class="bi bi-whatsapp me-1"></i> Open Reminder in WhatsApp App
+                </a>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -315,9 +327,14 @@ require_once __DIR__ . '/../includes/header.php';
                 <i class="bi bi-star-fill text-warning fs-5"></i> Client Review &amp; Feedback
             </h6>
             <p class="small text-muted mb-3">Invite bride to rate Safiya's Makeover on Google Maps.</p>
-            <button class="btn btn-outline-warning text-dark btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($review_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
-                <i class="bi bi-star me-1"></i> Send Google Review Request
-            </button>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn btn-outline-warning text-dark btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($review_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                    <i class="bi bi-star me-1"></i> Send Review Request (In-App)
+                </button>
+                <a href="<?= $review_url ?>" target="_blank" class="btn btn-outline-secondary btn-sm py-2 w-100">
+                    <i class="bi bi-whatsapp me-1"></i> Open Review in WhatsApp App
+                </a>
+            </div>
         </div>
 
         <!-- Consent Status Card -->

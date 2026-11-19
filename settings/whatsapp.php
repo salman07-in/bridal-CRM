@@ -10,6 +10,27 @@ $page_title = 'WhatsApp Connect';
 $apiUrl = getenv('WHATSAPP_API_URL') ?: 'https://safiyas-whatsapp.onrender.com';
 $apiToken = getenv('WHATSAPP_API_TOKEN') ?: 'safiya_secret_token_123';
 
+// Handle Reset Session POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reset_session') {
+    if ($apiUrl && $apiToken) {
+        $ch = curl_init(rtrim($apiUrl, '/') . '/reset');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiToken,
+                'Content-Type: application/json'
+            ],
+            CURLOPT_TIMEOUT => 8,
+        ]);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        set_flash('success', 'WhatsApp session has been reset. Please scan the fresh QR code below.');
+    }
+    header("Location: whatsapp.php");
+    exit;
+}
+
 // Check current connection status via microservice
 $statusData = ['connected' => false, 'phone' => null];
 if ($apiUrl && $apiToken) {
@@ -88,6 +109,12 @@ require_once __DIR__ . '/../includes/header.php';
                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="location.reload();">
                             <i class="bi bi-arrow-clockwise me-1"></i> Refresh Status
                         </button>
+                        <form method="POST" action="whatsapp.php" onsubmit="return confirm('Disconnect and reset WhatsApp session? You will need to scan the QR code again.');" style="display:inline;">
+                            <input type="hidden" name="action" value="reset_session">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-power me-1"></i> Reset / Re-link
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -108,9 +135,15 @@ require_once __DIR__ . '/../includes/header.php';
                         <li>Once scanned, the badge above will turn green (<span class="text-success fw-semibold">Connected</span>).</li>
                     </ol>
 
-                    <div class="p-3 bg-light rounded-3 small text-muted">
+                    <div class="p-3 bg-light rounded-3 small text-muted mb-3">
                         <i class="bi bi-shield-lock-fill text-success me-1"></i>
                         <strong>Secure Session:</strong> Messages are sent directly from your linked device without 3rd-party access to personal chats.
+                    </div>
+
+                    <div class="p-3 bg-warning-subtle text-dark rounded-3 small border border-warning-subtle">
+                        <i class="bi bi-info-circle-fill text-warning me-1"></i>
+                        <strong>If message shows "Waiting for this message":</strong><br>
+                        This is WhatsApp's standard end-to-end encryption key handshake for newly linked devices. Simply <strong>open WhatsApp on your salon phone</strong> for 10-20 seconds. Both phones will exchange keys and the message will automatically decrypt!
                     </div>
                 </div>
             </div>

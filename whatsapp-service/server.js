@@ -1,5 +1,11 @@
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { 
+    default: makeWASocket, 
+    useMultiFileAuthState, 
+    DisconnectReason,
+    Browsers,
+    makeCacheableSignalKeyStore
+} = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
@@ -17,6 +23,21 @@ let currentQR = null;
 let isConnected = false;
 let connectedPhone = null;
 
+// In-Memory message store to respond to WhatsApp E2EE retry requests
+// Resolves "Waiting for this message. This may take a while."
+const messageStore = new Map();
+
+// Silent logger mock for Signal Key Store
+const silentLogger = {
+    trace: () => {},
+    debug: () => {},
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    fatal: () => {},
+    child: () => silentLogger
+};
+
 // Auth middleware
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -28,38 +49,70 @@ const verifyToken = (req, res, next) => {
 };
 
 async function startWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
-    sock = makeWASocket({
-        auth: state,
-        printQRInTerminal: true,
-        browser: ["Safiya Makeover CRM", "Chrome", "1.0.0"]
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-
-        if (qr) {
-            currentQR = qr;
-        }
-
-        if (connection === 'close') {
-            isConnected = false;
-            connectedPhone = null;
-            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
-            if (shouldReconnect) {
-                setTimeout(startWhatsApp, 3000);
+        sock = makeWASocket({
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, silentLogger)
+            },
+            printQRInTerminal: false,
+            browser: Browsers.macOS('Desktop'),
+            syncFullHistory: false,
+            generateHighQualityLinkPreview: true,
+            // CRITICAL: getMessage handles decryption retry handshakes
+            getMessage: async (key) => {
+                if (key && key.id && messageStore.has(key.id)) {
+                    return messageStore.get(key.id);
+                }
+                return {
+                    conversation: "Safiya's Makeover Bridal CRM"
+                };
             }
-        } else if (connection === 'open') {
-            isConnected = true;
-            currentQR = null;
-            connectedPhone = sock.user?.id ? sock.user.id.split(':')[0] : 'Connected';
-            console.log('✅ WhatsApp connection opened successfully as:', connectedPhone);
-        }
-    });
+        });
+
+        sock.ev.on('creds.update', saveCreds);
+
+        // Store messages so decryption retries can be fulfilled
+        sock.ev.on('messages.upsert', async ({ messages }) => {
+            for (const m of messages) {
+                if (m.key && m.key.id && m.message) {
+                    messageStore.set(m.key.id, m.message);
+                    if (messageStore.size > 2000) {
+                        const oldestKey = messageStore.keys().next().value;
+                        messageStore.delete(oldestKey);
+                    }
+                }
+            }
+        });
+
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr) {
+                currentQR = qr;
+            }
+
+            if (connection === 'close') {
+                isConnected = false;
+                connectedPhone = null;
+                const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+                console.log('Connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
+                if (shouldReconnect) {
+                    setTimeout(startWhatsApp, 3000);
+                }
+            } else if (connection === 'open') {
+                isConnected = true;
+                currentQR = null;
+                connectedPhone = sock.user?.id ? sock.user.id.split(':')[0] : 'Connected';
+                console.log('✅ WhatsApp connection opened successfully as:', connectedPhone);
+            }
+        });
+    } catch (err) {
+        console.error('Fatal error initializing WhatsApp socket:', err);
+        setTimeout(startWhatsApp, 5000);
+    }
 }
 
 startWhatsApp();
@@ -88,7 +141,30 @@ app.get('/status', (req, res) => {
     });
 });
 
-// 3. Send Message Endpoint
+// 3. Reset Session Endpoint
+app.post('/reset', verifyToken, async (req, res) => {
+    try {
+        if (sock) {
+            try { await sock.logout(); } catch (e) {}
+            sock = null;
+        }
+        isConnected = false;
+        currentQR = null;
+        connectedPhone = null;
+        messageStore.clear();
+
+        if (fs.existsSync(AUTH_DIR)) {
+            fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+        }
+
+        setTimeout(startWhatsApp, 1500);
+        res.json({ success: true, message: 'Session reset successfully. Please refresh to scan new QR code.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 4. Send Message Endpoint
 app.post('/send', verifyToken, async (req, res) => {
     const { phone, text } = req.body;
 
@@ -105,7 +181,11 @@ app.post('/send', verifyToken, async (req, res) => {
         if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
         const jid = `${cleanPhone}@s.whatsapp.net`;
 
-        await sock.sendMessage(jid, { text: text });
+        const sentResult = await sock.sendMessage(jid, { text: text });
+        if (sentResult && sentResult.key && sentResult.key.id && sentResult.message) {
+            messageStore.set(sentResult.key.id, sentResult.message);
+        }
+
         res.json({ sent: true, phone: cleanPhone });
     } catch (err) {
         console.error('Error sending message:', err);
