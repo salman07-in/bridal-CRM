@@ -1,3 +1,4 @@
+<?php
 /**
  * Send a WhatsApp message using the QR‑gateway micro‑service.
  *
@@ -11,8 +12,8 @@
  *   WHATSAPP_API_TOKEN – secret token that the service validates.
  */
 function whatsapp_send_message(string $phone, string $message): array {
-    $apiUrl = getenv('WHATSAPP_API_URL');
-    $token  = getenv('WHATSAPP_API_TOKEN');
+    $apiUrl = getenv('WHATSAPP_API_URL') ?: 'https://safiyas-whatsapp.onrender.com';
+    $token  = getenv('WHATSAPP_API_TOKEN') ?: 'safiya_secret_token_123';
     if (!$apiUrl || !$token) {
         return ['sent'=>false,'error'=>'WhatsApp API not configured'];
     }

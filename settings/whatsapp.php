@@ -7,8 +7,8 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 $page_title = 'WhatsApp Connect';
-$apiUrl = getenv('WHATSAPP_API_URL') ?: '';
-$apiToken = getenv('WHATSAPP_API_TOKEN') ?: '';
+$apiUrl = getenv('WHATSAPP_API_URL') ?: 'https://safiyas-whatsapp.onrender.com';
+$apiToken = getenv('WHATSAPP_API_TOKEN') ?: 'safiya_secret_token_123';
 
 // Check current connection status via microservice
 $statusData = ['connected' => false, 'phone' => null];
