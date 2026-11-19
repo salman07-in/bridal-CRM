@@ -71,71 +71,199 @@ if (isset($_GET['action']) && $_GET['action'] === 'sample_csv') {
     exit;
 }
 
-// 3. Handle CSV File Upload & Parsing
+// 3. Handle CSV File Upload & Parsing (Smart Adaptive Importer)
 $import_result = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $file = $_FILES['csv_file'];
+    $update_existing = !empty($_POST['update_existing']);
+
     if ($file['error'] !== UPLOAD_ERR_OK) {
         set_flash('error', 'File upload error. Please select a valid CSV file.');
     } else {
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'csv') {
-            set_flash('error', 'Only .csv format files are supported. Please export your Excel register as CSV.');
+            set_flash('error', 'Only .csv format files are supported. In Excel, click File ➔ Save As ➔ CSV (Comma delimited).');
         } else {
             $handle = fopen($file['tmp_name'], 'r');
             if ($handle !== false) {
                 $imported = 0;
+                $updated = 0;
                 $skipped = 0;
+                $skipped_reasons = [];
                 $row_idx = 0;
 
-                // Function to parse flexible dates
+                // Flexible multi-format Date Parser
                 $parse_date = function($d_str) {
-                    $d_str = trim($d_str);
-                    if (empty($d_str)) return null;
-                    // Try DD/MM/YYYY or DD-MM-YYYY
+                    $d_str = trim($d_str ?? '');
+                    if ($d_str === '' || $d_str === '-' || strtolower($d_str) === 'null' || strtolower($d_str) === 'n/a') {
+                        return null;
+                    }
+                    // Excel numeric serial date (e.g. 44927)
+                    if (is_numeric($d_str) && (int)$d_str >= 35000 && (int)$d_str <= 65000) {
+                        return date('Y-m-d', ((int)$d_str - 25569) * 86400);
+                    }
+                    // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
                     if (preg_match('/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/', $d_str, $m)) {
                         return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
                     }
-                    // Try YYYY-MM-DD
+                    // DD/MM/YY or DD-MM-YY (2-digit year)
+                    if (preg_match('/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/', $d_str, $m)) {
+                        $yr = (int)$m[3] < 50 ? 2000 + (int)$m[3] : 1900 + (int)$m[3];
+                        return sprintf('%04d-%02d-%02d', $yr, (int)$m[2], (int)$m[1]);
+                    }
+                    // YYYY-MM-DD or YYYY/MM/DD
                     if (preg_match('/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/', $d_str, $m)) {
                         return sprintf('%04d-%02d-%02d', (int)$m[1], (int)$m[2], (int)$m[3]);
+                    }
+                    // Try strtotime for text dates e.g. "25 Nov 2023"
+                    $ts = strtotime($d_str);
+                    if ($ts && $ts > 0 && date('Y', $ts) > 1990) {
+                        return date('Y-m-d', $ts);
                     }
                     return null;
                 };
 
-                while (($data = fgetcsv($handle, 4096, ',')) !== false) {
+                // Default column mapping
+                $col_map = [
+                    'name' => 0,
+                    'mobile' => 1,
+                    'wedding_date' => 2,
+                    'makeup_date' => 3,
+                    'package' => 4,
+                    'amount' => 5,
+                    'advance' => 6,
+                    'slip' => 7,
+                    'btype' => 8,
+                    'branch' => 9,
+                    'notes' => 10
+                ];
+                $has_header_row = false;
+
+                while (($data = fgetcsv($handle, 8192, ',')) !== false) {
                     $row_idx++;
-                    // Skip header row
+
+                    // Check Header row on Row 1
                     if ($row_idx === 1) {
-                        // Check if row contains text like "Name" or "Full Name"
-                        if (stripos(implode(',', $data), 'Name') !== false) {
+                        $detected_map = [];
+                        $found_any = false;
+                        foreach ($data as $col_i => $header_val) {
+                            $clean_hdr = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $header_val)));
+                            if (strpos($clean_hdr, 'name') !== false || strpos($clean_hdr, 'bride') !== false || strpos($clean_hdr, 'client') !== false || strpos($clean_hdr, 'customer') !== false) {
+                                $detected_map['name'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'mobile') !== false || strpos($clean_hdr, 'phone') !== false || strpos($clean_hdr, 'contact') !== false || strpos($clean_hdr, 'number') !== false && strpos($clean_hdr, 'slip') === false) {
+                                $detected_map['mobile'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'wedding') !== false || strpos($clean_hdr, 'marriage') !== false || strpos($clean_hdr, 'shaadi') !== false || strpos($clean_hdr, 'anni') !== false) {
+                                $detected_map['wedding_date'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'makeup') !== false || strpos($clean_hdr, 'appointment') !== false || strpos($clean_hdr, 'service') !== false && strpos($clean_hdr, 'date') !== false) {
+                                $detected_map['makeup_date'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'package') !== false || strpos($clean_hdr, 'service') !== false) {
+                                $detected_map['package'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'advance') !== false || strpos($clean_hdr, 'deposit') !== false) {
+                                $detected_map['advance'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'amount') !== false || strpos($clean_hdr, 'total') !== false || strpos($clean_hdr, 'cost') !== false || strpos($clean_hdr, 'price') !== false) {
+                                $detected_map['amount'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'slip') !== false || strpos($clean_hdr, 'bill') !== false || strpos($clean_hdr, 'invoice') !== false) {
+                                $detected_map['slip'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'branch') !== false || strpos($clean_hdr, 'city') !== false) {
+                                $detected_map['branch'] = $col_i;
+                                $found_any = true;
+                            } elseif (strpos($clean_hdr, 'note') !== false || strpos($clean_hdr, 'remark') !== false || strpos($clean_hdr, 'address') !== false) {
+                                $detected_map['notes'] = $col_i;
+                                $found_any = true;
+                            }
+                        }
+
+                        if ($found_any && isset($detected_map['name'])) {
+                            $col_map = array_merge($col_map, $detected_map);
+                            $has_header_row = true;
                             continue;
                         }
                     }
 
-                    $name = trim($data[0] ?? '');
-                    $mobile = clean_indian_phone(trim($data[1] ?? ''));
+                    // Extract columns based on mapping
+                    $raw_name = trim($data[$col_map['name']] ?? '');
+                    $raw_mobile = trim($data[$col_map['mobile']] ?? '');
 
-                    if (empty($name) || empty($mobile)) {
+                    // Auto-scan fallback if name or phone missing in mapped column
+                    if (empty($raw_name) || empty($raw_mobile)) {
+                        foreach ($data as $cell) {
+                            $cell_str = trim($cell);
+                            $digits_only = preg_replace('/[^\d]/', '', $cell_str);
+                            if (strlen($digits_only) >= 10 && empty($raw_mobile)) {
+                                $raw_mobile = $cell_str;
+                            } elseif (strlen($cell_str) >= 3 && !is_numeric($cell_str) && empty($raw_name)) {
+                                $raw_name = $cell_str;
+                            }
+                        }
+                    }
+
+                    $name = $raw_name;
+                    $mobile = clean_indian_phone($raw_mobile);
+
+                    if (empty($name)) {
                         $skipped++;
+                        if (count($skipped_reasons) < 5) $skipped_reasons[] = "Row {$row_idx}: Bride Name missing";
                         continue;
                     }
 
-                    $wedding_date = $parse_date($data[2] ?? '');
-                    $makeup_date = $parse_date($data[3] ?? '');
-                    $package = trim($data[4] ?? '');
-                    $amount = !empty($data[5]) ? (float)$data[5] : null;
-                    $advance = !empty($data[6]) ? (float)$data[6] : 0.00;
-                    $slip = trim($data[7] ?? '');
-                    $btype = !empty($data[8]) ? trim($data[8]) : 'Bridal Makeup';
-                    $branch = !empty($data[9]) ? trim($data[9]) : 'Main Branch';
-                    $notes = trim($data[10] ?? '');
+                    if (empty($mobile) || strlen(preg_replace('/[^\d]/', '', $mobile)) < 10) {
+                        $skipped++;
+                        if (count($skipped_reasons) < 5) $skipped_reasons[] = "Row {$row_idx}: Invalid mobile '{$raw_mobile}' for bride '{$name}'";
+                        continue;
+                    }
+
+                    $wedding_date = $parse_date($data[$col_map['wedding_date']] ?? '');
+                    $makeup_date = $parse_date($data[$col_map['makeup_date']] ?? '');
+                    $package = trim($data[$col_map['package']] ?? '');
+                    $amount = !empty($data[$col_map['amount']]) ? (float)preg_replace('/[^\d\.]/', '', $data[$col_map['amount']]) : null;
+                    $advance = !empty($data[$col_map['advance']]) ? (float)preg_replace('/[^\d\.]/', '', $data[$col_map['advance']]) : 0.00;
+                    $slip = trim($data[$col_map['slip']] ?? '');
+                    $btype = !empty($data[$col_map['btype']]) ? trim($data[$col_map['btype']]) : 'Bridal Makeup';
+                    $branch = !empty($data[$col_map['branch']]) ? trim($data[$col_map['branch']]) : 'Main Branch';
+                    $notes = trim($data[$col_map['notes']] ?? '');
 
                     // Check if customer already exists by mobile
                     $check = $db->prepare("SELECT id FROM customers WHERE mobile_number = :m LIMIT 1");
                     $check->execute(['m' => $mobile]);
-                    if ($check->fetchColumn()) {
-                        $skipped++;
+                    $existing_id = $check->fetchColumn();
+
+                    if ($existing_id) {
+                        if ($update_existing) {
+                            // Update existing customer record with new dates & data
+                            $upd = $db->prepare("UPDATE customers SET 
+                                full_name = :name,
+                                wedding_date = COALESCE(:wed, wedding_date),
+                                makeup_date = COALESCE(:mkp, makeup_date),
+                                service_package = CASE WHEN :pkg != '' THEN :pkg ELSE service_package END,
+                                amount = COALESCE(:amt, amount),
+                                advance_amount = CASE WHEN :adv > 0 THEN :adv ELSE advance_amount END,
+                                slip_number = CASE WHEN :slip != '' THEN :slip ELSE slip_number END,
+                                notes = CASE WHEN :notes != '' THEN :notes ELSE notes END
+                                WHERE id = :id");
+                            $upd->execute([
+                                'name' => $name,
+                                'wed' => $wedding_date,
+                                'mkp' => $makeup_date,
+                                'pkg' => $package,
+                                'amt' => $amount,
+                                'adv' => $advance,
+                                'slip' => $slip,
+                                'notes' => $notes,
+                                'id' => $existing_id
+                            ]);
+                            $updated++;
+                        } else {
+                            $skipped++;
+                            if (count($skipped_reasons) < 5) $skipped_reasons[] = "Row {$row_idx}: Mobile {$mobile} already exists ({$name})";
+                        }
                         continue;
                     }
 
@@ -168,8 +296,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 }
                 fclose($handle);
 
-                log_audit('import', 'customer', null, ['imported' => $imported, 'skipped' => $skipped]);
-                set_flash('success', "Import complete! Successfully added {$imported} new bride records ({$skipped} duplicate or invalid rows skipped).");
+                log_audit('import', 'customer', null, ['imported' => $imported, 'updated' => $updated, 'skipped' => $skipped]);
+                
+                $msg = "Import completed! Successfully added <strong>{$imported}</strong> new brides";
+                if ($updated > 0) {
+                    $msg .= ", updated <strong>{$updated}</strong> existing records";
+                }
+                $msg .= ". ({$skipped} skipped)";
+                if (!empty($skipped_reasons)) {
+                    $msg .= "<br><small class='mt-1 d-block text-muted'>Sample skipped rows: " . implode(' &bull; ', $skipped_reasons) . "</small>";
+                }
+
+                set_flash($imported > 0 || $updated > 0 ? 'success' : 'warning', $msg);
                 header("Location: index.php");
                 exit;
             }
@@ -229,7 +367,14 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Select CSV Register File</label>
                     <input type="file" name="csv_file" class="form-control" accept=".csv" required>
-                    <small class="text-muted d-block mt-1">Accepts dates formatted as <code>DD/MM/YYYY</code> or <code>YYYY-MM-DD</code>.</small>
+                    <small class="text-muted d-block mt-1">Accepts any column order, and dates formatted as <code>DD/MM/YYYY</code> or <code>YYYY-MM-DD</code>.</small>
+                </div>
+
+                <div class="form-check mb-3 p-2 bg-light rounded-2">
+                    <input class="form-check-input ms-1 me-2" type="checkbox" name="update_existing" value="1" id="updateExisting" checked>
+                    <label class="form-check-label small fw-semibold" for="updateExisting">
+                        Update existing brides if phone number matches (overwrites with new wedding date)
+                    </label>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center pt-3 border-top">

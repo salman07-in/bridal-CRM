@@ -22,10 +22,10 @@ $days_in_month = (int)$first_day->format('t');
 $start_day_of_week = (int)$first_day->format('w'); // 0 (Sun) to 6 (Sat)
 $month_name = $first_day->format('F');
 
-// Fetch all customers with valid wedding dates
+// Fetch all customers with valid wedding dates (past anniversaries AND current year wedding days)
 $stmt = $db->prepare("SELECT id, customer_code, full_name, mobile_number, wedding_date, salon_branch 
                       FROM customers 
-                      WHERE wedding_date IS NOT NULL AND YEAR(wedding_date) < :target_year");
+                      WHERE wedding_date IS NOT NULL AND YEAR(wedding_date) <= :target_year");
 $stmt->execute(['target_year' => $year]);
 $all_brides = $stmt->fetchAll();
 
@@ -44,14 +44,14 @@ foreach ($all_brides as $b) {
     if ($a_year === $year && $a_month === $month) {
         $wed_year = (int)date('Y', strtotime($b['wedding_date']));
         $years_milestone = $year - $wed_year;
-        if ($years_milestone >= 1) {
-            $events_by_day[$a_day][] = [
-                'id' => $b['id'],
-                'name' => $b['full_name'],
-                'years' => $years_milestone,
-                'mobile' => $b['mobile_number']
-            ];
-        }
+        
+        $events_by_day[$a_day][] = [
+            'id' => $b['id'],
+            'name' => $b['full_name'],
+            'years' => $years_milestone,
+            'is_wedding_day' => ($years_milestone === 0),
+            'mobile' => $b['mobile_number']
+        ];
     }
 }
 
@@ -120,10 +120,14 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <?php foreach ($day_events as $ev): ?>
-                        <a href="../customers/view.php?id=<?= $ev['id'] ?>" class="cal-event-pill" title="<?= htmlspecialchars($ev['name']) ?> (<?= $ev['years'] ?> Years)">
+                        <a href="../customers/view.php?id=<?= $ev['id'] ?>" class="cal-event-pill" title="<?= htmlspecialchars($ev['name']) ?> <?= $ev['is_wedding_day'] ? '(Wedding Day)' : '(' . $ev['years'] . ' Years Anniversary)' ?>">
                             <i class="bi bi-heart-fill me-1" style="font-size: 0.65rem;"></i>
                             <strong><?= htmlspecialchars($ev['name']) ?></strong> 
-                            <span class="badge badge-anniversary ms-1" style="font-size: 0.6rem;"><?= $ev['years'] ?>y</span>
+                            <?php if ($ev['is_wedding_day']): ?>
+                                <span class="badge bg-success ms-1" style="font-size: 0.6rem;">Wedding</span>
+                            <?php else: ?>
+                                <span class="badge badge-anniversary ms-1" style="font-size: 0.6rem;"><?= $ev['years'] ?>y</span>
+                            <?php endif; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
