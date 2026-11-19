@@ -132,6 +132,31 @@ if ($send_digest === '1' && !empty($owner_email)) {
     echo "[+] Owner Daily Digest Email: " . ($email_sent ? "Dispatched" : "Skipped/Failed") . "\n";
 }
 
+// 5. Send Owner Daily WhatsApp Morning Brief
+$owner_wa = get_setting('salon_phone', '+91 95195 06233');
+$owner_wa_enabled = get_setting('send_owner_whatsapp_digest', '1');
+if ($owner_wa_enabled === '1' && !empty($owner_wa)) {
+    $salon_name = get_setting('salon_name', "Safiya's Makeover");
+    $wa_summary = "✨ *Good Morning {$salon_name}!* ✨\n" .
+                  "📅 *Daily Salon Brief:* {$today_str} (Asia/Kolkata)\n\n" .
+                  "🎂 *Today's Anniversaries:* {$today_count} Bride(s)\n";
+    foreach ($todays as $t) {
+        $wa_summary .= "   • {$t['customer']['full_name']} ({$t['years']}y milestone - {$t['customer']['mobile_number']})\n";
+    }
+    $wa_summary .= "\n🌙 *Tomorrow's Eve Wishes:* {$tomorrow_count} Bride(s)\n";
+    foreach ($tomorrows as $tm) {
+        $wa_summary .= "   • {$tm['customer']['full_name']} ({$tm['years']}y)\n";
+    }
+    $wa_summary .= "\n💄 *Tomorrow's Appointments:* {$pre_makeup_count} Booking(s)\n";
+    foreach ($pre_makeup as $pm) {
+        $wa_summary .= "   • {$pm['full_name']} (" . ($pm['service_package'] ?: 'Bridal Package') . ")\n";
+    }
+    $wa_summary .= "\nHave a radiant & successful day at the studio! 💖";
+
+    $wa_res = whatsapp_send_message($owner_wa, $wa_summary);
+    echo "[+] Owner WhatsApp Morning Brief: " . ($wa_res['sent'] ? "Delivered to {$owner_wa}" : "Skipped/Offline") . "\n";
+}
+
 // Log execution in audit trail
 log_audit('cron_reminders', 'reminder', null, [
     'today_count' => $today_count,

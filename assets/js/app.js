@@ -72,5 +72,46 @@ document.addEventListener("DOMContentLoaded", function () {
       this.value = val;
     });
   });
+
+  // Instant Live Search Filter for Customer Register Table
+  const liveSearchInput = document.getElementById("liveCustomerSearch");
+  if (liveSearchInput) {
+    liveSearchInput.addEventListener("input", function () {
+      const query = this.value.trim().toLowerCase();
+      const rows = document.querySelectorAll("table.table-salon tbody tr");
+      let visibleCount = 0;
+
+      rows.forEach(function (row) {
+        // Skip any no-records alert row
+        if (row.classList.contains("no-records-row")) return;
+
+        const rowText = row.textContent.toLowerCase();
+        if (!query || rowText.includes(query)) {
+          row.style.display = "";
+          visibleCount++;
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      // Handle no-match row indicator
+      const tbody = document.querySelector("table.table-salon tbody");
+      let emptyNotice = document.getElementById("liveSearchEmptyNotice");
+      if (visibleCount === 0 && query.length > 0 && tbody) {
+        if (!emptyNotice) {
+          emptyNotice = document.createElement("tr");
+          emptyNotice.id = "liveSearchEmptyNotice";
+          emptyNotice.className = "no-records-row text-center text-muted";
+          emptyNotice.innerHTML = '<td colspan="10" class="py-4"><i class="bi bi-search me-1"></i> No matching brides found for "<b>' + query.replace(/</g, "&lt;") + '</b>"</td>';
+          tbody.appendChild(emptyNotice);
+        } else {
+          emptyNotice.innerHTML = '<td colspan="10" class="py-4"><i class="bi bi-search me-1"></i> No matching brides found for "<b>' + query.replace(/</g, "&lt;") + '</b>"</td>';
+          emptyNotice.style.display = "";
+        }
+      } else if (emptyNotice) {
+        emptyNotice.style.display = "none";
+      }
+    });
+  }
 });
 

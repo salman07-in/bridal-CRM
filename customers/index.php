@@ -150,7 +150,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="col-12 col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, mobile, customer code, or slip #..." value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" name="search" id="liveCustomerSearch" autocomplete="off" class="form-control border-start-0" placeholder="Search by name, mobile, customer code, or slip #..." value="<?= htmlspecialchars($search) ?>">
                 </div>
             </div>
 
@@ -258,6 +258,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <td class="small text-muted"><?= htmlspecialchars($c['salon_branch'] ?: '—') ?></td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group btn-group-sm">
+                                        <a href="receipt.php?id=<?= $c['id'] ?>" target="_blank" class="btn btn-outline-dark" title="View & Print Booking Slip"><i class="bi bi-receipt"></i></a>
                                         <a href="<?= $wa_direct_url ?>" target="_blank" class="btn btn-outline-success" title="Open WhatsApp Chat"><i class="bi bi-whatsapp"></i></a>
                                         <a href="view.php?id=<?= $c['id'] ?>" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
                                         <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>

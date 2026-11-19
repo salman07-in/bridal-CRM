@@ -69,6 +69,26 @@ $wa_msg = str_replace(
 );
 $wa_url = build_whatsapp_url($customer['mobile_number'], $wa_msg);
 
+// Balance & Review templates
+$balance_msg = "Hello {$customer['full_name']}! This is a gentle reminder from {$salon_name} regarding your bridal appointment (" . ($customer['service_package'] ?: 'Bridal Makeup') . "). Remaining balance due is " . format_inr($balance) . " on your appointment date. We look forward to serving you! 💖";
+$review_link = get_setting('google_review_link', 'https://g.page/r/safiyasmakeover/review');
+$review_msg = "Dear {$customer['full_name']}, thank you for choosing {$salon_name}! 💖 We hope you felt radiant and confident. Please take a moment to share your lovely review on Google: {$review_link} ⭐⭐⭐⭐⭐ Your feedback means the world to us!";
+
+// Format structured WhatsApp Receipt Message for 1-click sharing
+$receipt_msg = "✨ *{$salon_name}* — Official Booking Receipt ✨\n\n" .
+               "📋 *Booking Code:* {$customer['customer_code']}\n" .
+               (!empty($customer['slip_number']) ? "🏷️ *Slip #:* {$customer['slip_number']}\n" : "") .
+               "👰 *Bride Name:* {$customer['full_name']}\n" .
+               "💄 *Package:* " . ($customer['service_package'] ?: 'Bridal Package') . "\n" .
+               (!empty($customer['makeup_date']) ? "📅 *Makeup Date:* " . format_date_in($customer['makeup_date']) . "\n" : "") .
+               (!empty($customer['wedding_date']) ? "💍 *Wedding Date:* " . format_date_in($customer['wedding_date']) . "\n" : "") .
+               "\n💰 *Total Package:* " . format_inr($customer['amount']) . "\n" .
+               "✅ *Advance Paid:* " . format_inr($customer['advance_amount']) . "\n" .
+               ($balance > 0 ? "⏳ *Balance Due:* " . format_inr($balance) . "\n" : "🎉 *Payment Status:* Fully Paid\n") .
+               "\n📍 *Branch:* " . ($customer['salon_branch'] ?: 'Main Branch') . "\n" .
+               "📞 *Contact:* " . get_setting('salon_phone', '+91 95195 06233') . " | " . get_setting('salon_phone_2', '+91 86046 59368') . "\n\n" .
+               "Thank you for booking with {$salon_name}! 💖";
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -89,14 +109,17 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
     </div>
-    <div class="d-flex gap-2">
-                <button class="btn btn-whatsapp-sm px-3 py-2 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($wa_msg) ?>">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="receipt.php?id=<?= $customer['id'] ?>" target="_blank" class="btn btn-outline-dark btn-sm px-3 py-2">
+            <i class="bi bi-receipt me-1"></i> Booking Slip / Receipt
+        </a>
+        <button class="btn btn-whatsapp-sm px-3 py-2 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($wa_msg) ?>">
             <i class="bi bi-whatsapp"></i> Send WhatsApp Wish
         </button>
-        <a href="edit.php?id=<?= $customer['id'] ?>" class="btn btn-outline-primary btn-sm px-3">
+        <a href="edit.php?id=<?= $customer['id'] ?>" class="btn btn-outline-primary btn-sm px-3 py-2">
             <i class="bi bi-pencil me-1"></i> Edit
         </a>
-        <a href="delete.php?id=<?= $customer['id'] ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this bride profile permanently?');">
+        <a href="delete.php?id=<?= $customer['id'] ?>" class="btn btn-outline-danger btn-sm py-2" onclick="return confirm('Delete this bride profile permanently?');">
             <i class="bi bi-trash"></i>
         </a>
     </div>
@@ -256,6 +279,45 @@ require_once __DIR__ . '/../includes/header.php';
                 </a>
             </div>
             <small class="text-muted text-center d-block mt-2" style="font-size: 0.72rem;">Sends instantly via linked WhatsApp, or open externally if needed.</small>
+        </div>
+
+        <!-- Quick Booking Slip & Operational Actions -->
+        <div class="card card-salon border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-receipt-cutoff text-dark fs-5"></i> Booking Slip &amp; Invoices
+            </h6>
+            <div class="d-flex flex-column gap-2">
+                <a href="receipt.php?id=<?= $customer['id'] ?>" target="_blank" class="btn btn-outline-dark btn-sm py-2 w-100">
+                    <i class="bi bi-printer me-1"></i> View &amp; Print Booking Slip
+                </a>
+                <button class="btn btn-success btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($receipt_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                    <i class="bi bi-whatsapp me-1"></i> Send Booking Slip on WhatsApp
+                </button>
+            </div>
+        </div>
+
+        <?php if ($balance > 0): ?>
+        <!-- Balance Due Reminder Card -->
+        <div class="card card-salon border-0 shadow-sm p-4 mb-4 border-start border-danger border-4">
+            <h6 class="fw-bold mb-2 text-danger d-flex align-items-center gap-2">
+                <i class="bi bi-cash-stack fs-5"></i> Pending Balance Alert
+            </h6>
+            <p class="small text-muted mb-3">Balance due: <strong class="text-danger font-monospace"><?= format_inr($balance) ?></strong></p>
+            <button class="btn btn-danger btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($balance_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                <i class="bi bi-bell-fill me-1"></i> Send Balance Due Reminder
+            </button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Google Review Request Card -->
+        <div class="card card-salon border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-bold mb-2 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-star-fill text-warning fs-5"></i> Client Review &amp; Feedback
+            </h6>
+            <p class="small text-muted mb-3">Invite bride to rate Safiya's Makeover on Google Maps.</p>
+            <button class="btn btn-outline-warning text-dark btn-sm py-2 w-100 send-wa" data-phone="<?= htmlspecialchars($customer['mobile_number']) ?>" data-msg="<?= htmlspecialchars($review_msg) ?>" data-customer-id="<?= $customer['id'] ?>">
+                <i class="bi bi-star me-1"></i> Send Google Review Request
+            </button>
         </div>
 
         <!-- Consent Status Card -->
