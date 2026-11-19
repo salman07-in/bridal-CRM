@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('salon_tagline', trim($_POST['salon_tagline'] ?? ''));
         set_setting('salon_branch', trim($_POST['salon_branch'] ?? ''));
         set_setting('salon_phone', trim($_POST['salon_phone'] ?? ''));
+        set_setting('salon_phone_2', trim($_POST['salon_phone_2'] ?? ''));
         set_setting('salon_owner_email', trim($_POST['salon_owner_email'] ?? ''));
         set_setting('whatsapp_anniversary_template', trim($_POST['whatsapp_anniversary_template'] ?? ''));
         set_setting('whatsapp_eve_template', trim($_POST['whatsapp_eve_template'] ?? ''));
@@ -64,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $salon_name = get_setting('salon_name', "Safiya's Makeover");
 $salon_tagline = get_setting('salon_tagline', "Bridal & Makeover Studio");
 $salon_branch = get_setting('salon_branch', "Main Branch");
-$salon_phone = get_setting('salon_phone', "+91 98765 43210");
+$salon_phone = get_setting('salon_phone', "+91 95195 06233");
+$salon_phone_2 = get_setting('salon_phone_2', "+91 86046 59368");
 $salon_owner_email = get_setting('salon_owner_email', "owner@safiyasmakeover.com");
 $wa_template = get_setting('whatsapp_anniversary_template', 'Dear {bride_name}, warm congratulations on your {years} Wedding Anniversary from {salon_name}! Wishing you a wonderful celebration.');
 $wa_eve_template = get_setting('whatsapp_eve_template', 'Hello {bride_name}! Tomorrow is your special wedding anniversary! Warm wishes in advance from all of us at {salon_name}.');
@@ -101,17 +103,21 @@ require_once __DIR__ . '/../includes/header.php';
                         <label class="form-label small fw-semibold">Studio Tagline</label>
                         <input type="text" name="salon_tagline" class="form-control" value="<?= htmlspecialchars($salon_tagline) ?>">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label small fw-semibold">Primary Branch</label>
                         <input type="text" name="salon_branch" class="form-control" value="<?= htmlspecialchars($salon_branch) ?>">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label small fw-semibold">Studio Phone</label>
-                        <input type="text" name="salon_phone" class="form-control" value="<?= htmlspecialchars($salon_phone) ?>">
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label small fw-semibold">Owner Email (For Daily Digests)</label>
                         <input type="email" name="salon_owner_email" class="form-control" value="<?= htmlspecialchars($salon_owner_email) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold"><i class="bi bi-whatsapp text-success me-1"></i> WhatsApp Number 1 (Primary)</label>
+                        <input type="text" name="salon_phone" class="form-control" value="<?= htmlspecialchars($salon_phone) ?>" placeholder="+91 95195 06233">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold"><i class="bi bi-whatsapp text-success me-1"></i> WhatsApp Number 2 (Secondary)</label>
+                        <input type="text" name="salon_phone_2" class="form-control" value="<?= htmlspecialchars($salon_phone_2) ?>" placeholder="+91 86046 59368">
                     </div>
                 </div>
 

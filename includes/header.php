@@ -12,7 +12,8 @@ $root = get_app_root();
 $salon_name = get_setting('salon_name', "Safiya's Makeover");
 $salon_tagline = get_setting('salon_tagline', "Bridal & Makeover Studio");
 $salon_branch = get_setting('salon_branch', "Main Branch");
-$salon_phone = get_setting('salon_phone', "+91 98765 43210");
+$salon_phone = get_setting('salon_phone', "+91 95195 06233");
+$salon_phone_2 = get_setting('salon_phone_2', "+91 86046 59368");
 
 // Current active page detection
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
@@ -215,7 +216,10 @@ $pending_reminders_count = count($today_anniversaries);
                 <div class="d-none d-md-block">
                     <span class="text-muted small">
                         <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($salon_branch) ?> &bull; 
-                        <i class="bi bi-telephone ms-2 me-1"></i><?= htmlspecialchars($salon_phone) ?>
+                        <i class="bi bi-whatsapp text-success ms-2 me-1"></i><?= htmlspecialchars($salon_phone) ?>
+                        <?php if (!empty($salon_phone_2)): ?>
+                            &bull; <i class="bi bi-whatsapp text-success ms-2 me-1"></i><?= htmlspecialchars($salon_phone_2) ?>
+                        <?php endif; ?>
                     </span>
                 </div>
             </div>

@@ -93,8 +93,15 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <div class="col-md-6">
                     <h6 class="fw-bold mb-3"><i class="bi bi-phone me-1 text-salon"></i> How to link your phone:</h6>
+                    
+                    <div class="p-2 mb-3 bg-light rounded-2 small border">
+                        <div class="fw-semibold text-dark mb-1">Registered Studio WhatsApp Numbers:</div>
+                        <div><i class="bi bi-whatsapp text-success me-1"></i> <strong>Number 1 (Primary):</strong> +91 95195 06233</div>
+                        <div><i class="bi bi-whatsapp text-success me-1"></i> <strong>Number 2 (Secondary):</strong> +91 86046 59368</div>
+                    </div>
+
                     <ol class="small text-secondary ps-3 mb-4" style="line-height: 1.8;">
-                        <li>Open WhatsApp on the salon's phone (<strong>+91 95195 06233</strong>).</li>
+                        <li>Open WhatsApp on either salon phone (<strong>+91 95195 06233</strong> or <strong>+91 86046 59368</strong>).</li>
                         <li>Tap <strong>Menu (⋮)</strong> on Android or <strong>Settings</strong> on iPhone.</li>
                         <li>Select <strong>Linked Devices</strong>, then tap <strong>Link a Device</strong>.</li>
                         <li>Point your camera at the QR code on the left to scan.</li>
